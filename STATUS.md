@@ -2,31 +2,33 @@
 
 ## Where the project stands right now
 
-First public scaffold (v0.1.0) pushed to GitHub as source only. The Swift sources are
-complete and internally consistent but have **never been compiled or run** — this
-session had no macOS host. The first build must happen on the operator's Mac.
+**Verified working on device (2026-11-10, operator's Mac, macOS 27.2/arm64).**
+v0.2.0: the app builds clean, runs, polls IOKit at 33 Hz, and blinks — idle
+shows occasional green read blinks; sustained write load locks the icon
+steadily both-lit (green + red) as designed. Screenshot verification of the
+icon's lit states was done by zooming onto the System-Events-reported status
+item frame.
 
 ## What exists
 
 - SwiftPM package, executable target `DiskLEDPlus` (AppKit menu bar app, no Xcode).
 - `DiskActivitySource` — IOKit polling of `IOBlockStorageDriver` "Statistics"
   (bytes/ops read), aggregated over all disks, returned as per-tick deltas.
+  Key names verified on this macOS build.
 - `LEDIconRenderer` — programmatic square icon: two vertical rectangles, left green
   (reads), right red (writes); four cached states (off / R / W / both); not-template.
 - `AppDelegate` — 30 ms `Timer` (`tolerance = 0`), blink-from-delta with no smoothing,
   menu with live B/s readout (1 s window, display-only) and About/Quit.
+- Opt-in debug tracing (`DISKLED_DEBUG=1`, unified log, see KB.md §Debug tracing).
 
 ## Next steps (in order)
 
-1. On the operator's Mac: clone to `~/src/diskled-plus`, `swift build -c release`, run,
-   fix any compile errors (see AGENTS.md verification list). Copy ground truth back
-   into KB.md.
-2. Verify every small I/O produces a visible instant blink; verify sustained load
-   locks steady ON.
-3. If the menu bar throttles 33 Hz swaps, decide a rendering workaround with the
-   operator — never silently lengthen the tick.
-4. After on-device verification: release a first "works on hardware" tag (0.2.x minor
-   bump per pre-1.0 convention).
+1. Operator uses the running app for a few days: judge perceived blink quality,
+   off-state visibility on a light menu bar, and the menu's B/s readout.
+2. If judged good: packaging work if wanted (notarized .app / launch agent for
+   auto-start were floated pre-0.2) — ask the operator before scaffolding that.
+3. If the menu bar ever throttles swap rendering under load, evaluate a custom
+   `NSStatusItem` view with the operator — never silently lengthen the tick.
 
 ## Environment notes
 
@@ -34,3 +36,10 @@ Development happens from the Hermes LT checkout (`/opt/data/workspace/diskled-pl
 registered as a Hermes project); the operator's daily-use build host's checkout is
 `~/src/diskled-plus/`. No deployment target — it never runs on a server; GitHub is
 the only distribution channel (plus later a notarized .app if requested).
+
+Menu bar position gotcha for screenshots/verification: the status item's real
+frame is discoverable via System Events
+(`osascript -e 'tell application "System Events" to tell process "DiskLEDPlus"
+to get {position, size} of every menu bar item of every menu bar'`). On this
+machine it sits mid-bar among many other meter items; the tiny round dot nearby
+belongs to usagebar, not to us.

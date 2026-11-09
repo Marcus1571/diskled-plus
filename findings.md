@@ -54,3 +54,33 @@ square; left = bright green (reads), right = red (writes); 1 pt seam.
 DiskLED by Helge Klein, freeware, source at github.com/helgeklein/DiskLED (Win32/C++,
 MFC). Config INI stored next to the EXE. Works on Windows XP+ without admin. We copy
 neither code nor assets — idea credit only, stated in LICENSE and About dialog.
+
+## First on-device build/verification (2026-11-10, operator's Mac)
+
+This session had the real host (macOS 27.2 build 26B123, arm64, Command Line Tools,
+no full Xcode project). Results, with evidence:
+
+- **Compile:** exactly one error — `IORegistryEntryCreateCFProperty` was called
+  with a 5-argument out-parameter form that doesn't exist in the Swift IOKit
+  overlay. Fixed to the standard 4-argument returning form; build clean after.
+  (Write-time-only code, so this was the entire delta between "source complete"
+  and "compiles".)
+- **IOKit keys:** `ioreg -r -c IOBlockStorageDriver -l` shows `Bytes (Read)`,
+  `Bytes (Write)`, `Operations (Read)`, `Operations (Write)` as 64-bit numbers
+  on both internal disks (APPLE AP0512Z, Samsung 980 PRO 1TB). No key drift.
+- **Tick cadence:** 133 traced ticks: median dt 29.7 ms, p95 34.2 ms, max
+  35.1 ms → solid ~33 Hz, no run-loop coalescing (tolerance 0 works).
+- **Blink behavior under traced I/O:** a 64 MB `dd` write to /tmp showed reads
+  during the generator phase and the writes as three ~16 MB flush bursts
+  several ticks later (APFS async flush — expected; deltas are per-tick, no
+  smoothing). Small idle reads (4–350 KB, 1–13 ops) blink throughout.
+- **Rendering:** the status item's frame was queried via System Events
+  (position 1526,3 size 24×24 on a notoriously crowded menu bar), screenshots
+  zoomed onto it show left-half green lit at idle and *both* halves lit
+  (green + red) under sustained write load, colors intact — `isTemplate=false`
+  holds, macOS did not re-tint the icon.
+- **Environment notes for future sessions:** the operator's zsh defines a
+  `log` shell function that shadows `/usr/bin/log` (breaks `log stream` with
+  a confusing "too many arguments" — use the absolute path); `log stream`
+  needs `--level debug` to see debug-level messages. The tiny round dot in the
+  menu bar near the right side belongs to the sibling app usagebar.

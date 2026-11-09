@@ -31,10 +31,36 @@ sustained activity produces contiguous lit ticks, which read as steadily ON.
   disk block device, including NVMe subclass drivers). For each, read registry
   property `Statistics` and sum keys:
   - `Bytes (Read)`, `Bytes (Write)`, `Operations (Read)`, `Operations (Write)`
+- **Keys verified on-device** (2026-11-10, macOS 27.2 build 26B123): `ioreg -r -c
+  IOBlockStorageDriver -l` shows exactly these four keys (values are 64-bit
+  numbers). Values also flow through the app: per-tick deltas observed during
+  real I/O, including 16 MB flush bursts for a 64 MB `dd` write.
+- The property read uses `IORegistryEntryCreateCFProperty(entry, key, allocator,
+  options)` in its 4-argument returning form; the 5-argument out-param variant
+  does not exist in the current Swift IOKit overlay (compile error caught on
+  first on-device build).
 - Read-only; requires no root/admin.
 - `kIOMainPortDefault` (min macOS 12; package claims 13+).
 - Deliberate choice over matching bare `IOMedia`: IOMedia also matches partitions
   and volumes → double counting.
+
+## Debug tracing (opt-in)
+
+Launch with `DISKLED_DEBUG=1` — every tick then logs to the unified log
+(subsystem `com.diskledplus.app`, category `app`, debug level): milliseconds
+since the previous tick, and the raw read/write deltas of that tick. Startup
+also logs whether tracing is active. Off by default; when off, only errors,
+warnings and the startup line are logged.
+
+Inspect with:
+
+```
+/usr/bin/log stream --level debug --style compact \
+  --predicate 'subsystem == "com.diskledplus.app"'
+```
+
+Note: the operator's zsh defines a `log` shell function, so from their
+interactive shell use the absolute path `/usr/bin/log`.
 
 ## Rendering
 
@@ -63,13 +89,19 @@ Kill/later removal: quit via menu. No launch agent ships yet (planned post-0.2).
 
 ## Verification list (first on-device build)
 
-Must be cleared before "works" is claimable; see AGENTS.md for procedure and point
-STATUS.md for current state. Items:
+Cleared 2026-11-10 on the operator's Mac (macOS 27.2, arm64), evidence in
+findings.md and the v0.2.0 CHANGELOG entry:
 
-1. Compile clean on current macOS/Swift toolchain.
-2. `Statistics` key names correct on this macOS build (else fix and update KB.md).
-3. 33 Hz `NSStatusItem` image swaps render without visible throttling.
-4. Off-state visible on both dark and light menu bar.
+1. ✅ Compile clean on current macOS/Swift toolchain (after the
+   `IORegistryEntryCreateCFProperty` fix).
+2. ✅ `Statistics` key names correct on this macOS build (checked via `ioreg`
+   and via live per-tick deltas).
+3. ✅ 33 Hz tick cadence with no coalescing (median 29.7 ms over 133 traced
+   ticks); icon state swaps render in the menu bar. *Perceived* blink
+   smoothness over long use remains for the operator to judge.
+4. ✅/👤 Off-state renders as near-dark rectangles (visible as a distinct dark
+   square on this machine's dark-ish blue bar); light-menu-bar visibility is
+   left for the operator to eyeball on a day with a light bar.
 
 ## Provenance and license
 
