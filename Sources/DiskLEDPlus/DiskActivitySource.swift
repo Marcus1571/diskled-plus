@@ -91,9 +91,10 @@ final class DiskActivitySource {
     }
 
     private func registryDictionary(_ entry: io_object_t, key: String) -> [String: Any]? {
-        var unmanaged: Unmanaged<CFTypeRef>?
-        let kr = IORegistryEntryCreateCFProperty(entry, key as CFString, kCFAllocatorDefault, 0, &unmanaged)
-        guard kr == KERN_SUCCESS, let prop = unmanaged else { return nil }
+        guard let prop = IORegistryEntryCreateCFProperty(entry, key as CFString, kCFAllocatorDefault, 0) else {
+            log.warning("registry property \(key, privacy: .public) not found on an IOBlockStorageDriver entry")
+            return nil
+        }
         let dict = prop.takeRetainedValue() as? [String: Any]
         if dict == nil && !loggedMissingKeys && key == "Statistics" {
             loggedMissingKeys = true

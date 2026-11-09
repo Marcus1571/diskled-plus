@@ -30,6 +30,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var lastWindowWriteBytes: UInt64 = 0
     private var lastWindowTicks: UInt = 0
 
+    // Debug tracing (opt-in): launch with DISKLED_DEBUG=1 to log every tick to the
+    // unified log with the time since the previous tick and the raw deltas. 33 Hz
+    // logging is spammy by design — it exists to verify cadence and burst behavior.
+    private let debugTrace = ProcessInfo.processInfo.environment["DISKLED_DEBUG"] == "1"
+    private var lastBeatAt: DispatchTime?
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         buildMenu()
         render(.off)
@@ -39,7 +45,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         t.tolerance = 0 // no coalescing: sub-30 ms jitter is exactly what we are here to keep
         RunLoop.main.add(t, forMode: .common)
         timer = t
-        log.info("DiskLED-plus started, tick=\(Constants.tickInterval)s")
+        log.info("DiskLED-plus started, tick=\(Constants.tickInterval)s, debugTrace=\(self.debugTrace, privacy: .public)")
     }
 
     func applicationWillTerminate(_ notification: Notification) {
@@ -54,6 +60,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func beat() {
         let tick = source.tick()
+        if debugTrace {
+            let now = DispatchTime.now()
+            let dtMs = lastBeatAt.map { Double(now.uptimeNanoseconds &- $0.uptimeNanoseconds) / 1_000_000 } ?? 0
+            lastBeatAt = now
+            log.debug("tick dt=\(dtMs, format: .fixed(precision: 1))ms read=\(tick.readBytesDelta, privacy: .public)B/\(tick.readOpsDelta, privacy: .public)op write=\(tick.writeBytesDelta, privacy: .public)B/\(tick.writeOpsDelta, privacy: .public)op")
+        }
 
         windowReadBytes &+= tick.readBytesDelta
         windowWriteBytes &+= tick.writeBytesDelta
