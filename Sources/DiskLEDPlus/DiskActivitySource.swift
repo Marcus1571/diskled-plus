@@ -26,6 +26,7 @@ final class DiskActivitySource {
     private var lastWriteOps: UInt64 = 0
     private var loggedEmptyEnumeration = false
     private var loggedMissingKeys = false
+    private var loggedMissingProperty = false
 
     func tick() -> DiskTick {
         var readBytes: UInt64 = 0
@@ -92,7 +93,12 @@ final class DiskActivitySource {
 
     private func registryDictionary(_ entry: io_object_t, key: String) -> [String: Any]? {
         guard let prop = IORegistryEntryCreateCFProperty(entry, key as CFString, kCFAllocatorDefault, 0) else {
-            log.warning("registry property \(key, privacy: .public) not found on an IOBlockStorageDriver entry")
+            // A matched driver can transiently lack the property (device appearing or
+            // going away). Log once per process, never per tick — treat as silence.
+            if !loggedMissingProperty {
+                loggedMissingProperty = true
+                log.warning("registry property \(key, privacy: .public) missing on an IOBlockStorageDriver entry (transient during mount/unmount is normal; suppressing further such warnings)")
+            }
             return nil
         }
         let dict = prop.takeRetainedValue() as? [String: Any]

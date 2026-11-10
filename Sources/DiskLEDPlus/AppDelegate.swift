@@ -9,6 +9,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     // See findings.md / KB.md for the reasoning.
     private enum Constants {
         static let tickInterval: TimeInterval = 0.030
+        static let defaultBrightnessPercent = 60
+        static let brightnessKey = "ledBrightnessPercent"
     }
 
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
@@ -16,6 +18,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let renderer: LEDIconRenderer = .shared
     private var timer: Timer?
     private var lastRenderedState: LEDState?
+    private var brightnessMenuItem: NSMenuItem?
+
+    // LED brightness in percent of the lit colors' full strength (10–100). The
+    // operator set the default explicitly — never "bump it back up to be visible".
+    private var brightnessPercent: Int = Constants.defaultBrightnessPercent
 
     // Menu items that mirror live rates (display only; the LED stays the primary output).
     private var readRateItem: NSMenuItem?
@@ -37,6 +44,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var lastBeatAt: DispatchTime?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        UserDefaults.standard.register(defaults: [Constants.brightnessKey: Constants.defaultBrightnessPercent])
+        let stored = UserDefaults.standard.integer(forKey: Constants.brightnessKey)
+        brightnessPercent = min(max(stored, 10), 100)
         buildMenu()
         render(.off)
         let t = Timer(timeInterval: Constants.tickInterval, repeats: true) { [weak self] _ in
@@ -93,7 +103,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func render(_ state: LEDState) {
         lastRenderedState = state
-        statusItem.button?.image = renderer.icon(for: state)
+        statusItem.button?.image = renderer.icon(for: state, brightnessPercent: brightnessPercent)
         statusItem.button?.toolTip = "DiskLED-plus — green: reads, red: writes"
     }
 
@@ -114,6 +124,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(writeItem)
         readRateItem = readItem
         writeRateItem = writeItem
+        menu.addItem(.separator())
+
+        let brightnessMenu = NSMenu()
+        brightnessMenu.autoenablesItems = false
+        for percent in stride(from: 10, through: 100, by: 10) {
+            let item = NSMenuItem(title: "\(percent)%", action: #selector(setBrightness(_:)), keyEquivalent: "")
+            item.tag = percent
+            item.target = self
+            item.state = percent == brightnessPercent ? .on : .off
+            brightnessMenu.addItem(item)
+        }
+        let brightnessItem = NSMenuItem(title: "Brightness", action: nil, keyEquivalent: "")
+        brightnessItem.submenu = brightnessMenu
+        menu.addItem(brightnessItem)
+        brightnessMenuItem = brightnessItem
         menu.addItem(.separator())
 
         let about = NSMenuItem(title: "About DiskLED-plus",
@@ -140,6 +165,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let writeBps = Double(lastWindowWriteBytes) / seconds
         readRateItem?.title = "Reads   \(formatter.string(fromByteCount: Int64(readBps.rounded())))/s"
         writeRateItem?.title = "Writes  \(formatter.string(fromByteCount: Int64(writeBps.rounded())))/s"
+    }
+
+    // MARK: - Brightness
+
+    @objc private func setBrightness(_ sender: NSMenuItem) {
+        let percent = sender.tag
+        guard (10...100).contains(percent) else { return }
+        brightnessPercent = percent
+        UserDefaults.standard.set(percent, forKey: Constants.brightnessKey)
+        for item in brightnessMenuItem?.submenu?.items ?? [] {
+            item.state = item.tag == percent ? .on : .off
+        }
+        render(lastRenderedState ?? .off)
+        log.info("LED brightness set to \(percent)% (persisted)")
     }
 
     @objc private func showAbout() {
