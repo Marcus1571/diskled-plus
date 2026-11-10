@@ -1,0 +1,21 @@
+<?xml version="1.0" standalone="yes"?>
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>DiskLED-plus</title>
+    <link>https://raw.githubusercontent.com/Marcus1571/diskled-plus/main/appcast.xml</link>
+    <description>Most recent DiskLED-plus releases.</description>
+    <language>en</language>
+    <item>
+      <title>Version 0.5.0</title>
+      <pubDate>Tue, 10 Nov 2026 17:27:18 GMT</pubDate>
+      <sparkle:releaseNotesLink>https://github.com/Marcus1571/diskled-plus/releases/tag/v0.5.0</sparkle:releaseNotesLink>
+      <enclosure url="https://github.com/Marcus1571/diskled-plus/releases/download/v0.5.0/DiskLED-plus-0.5.0.dmg"
+                 sparkle:version="500"
+                 sparkle:shortVersionString="0.5.0"
+                 sparkle:edSignature="mMrLim5OfEFIOEf6+mgJmmiVdEfytreaFdOyLORHp3PDStmPm++F/lL9rY08BkXI+tL6SXojIQggrSdQRGKlCA=="
+                 length="1292207"
+                 type="application/octet-stream" />
+      <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+    </item>
+  </channel>
+</rss>

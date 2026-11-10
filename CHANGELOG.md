@@ -1,5 +1,54 @@
 # CHANGELOG.md
 
+## [0.5.0] — 2026-11-10
+
+### Added
+- **Software updates (Sparkle 2.10.1 via SwiftPM)** — the bundled app now
+  self-updates: automatic check at startup and weekly (`SUScheduledCheckInterval`
+  604800, `SUAutomaticallyUpdate` so updates install without a prompt), feed
+  `appcast.xml` in this repo served via raw.githubusercontent, EdDSA-signed
+  (public key `4X6j0DXdJCmcxqe3fkMKWxKuuHhhM+rYrK5LauHe9UA=` baked into
+  `Info.plist` as `SUPublicEDKey`; private key lives in the operator's login
+  keychain, never in the repo). Menu gains a **Check for Updates…** voice
+  (bundle launches only). `Sources/DiskLEDPlus/AppDelegate.swift` wires
+  `SPUStandardUpdaterController`; bare-binary launches keep working without it.
+- **`scripts/make-dmg.sh`** — distribution artifact: Developer ID–signed
+  `.dmg` (built from `make-app.sh "$version" "Developer ID"` with hardened
+  runtime + timestamp), staged with an /Applications symlink, default-assumed
+  notary keychain profile `diskledplus-notary` (submits + waits + staples +
+  validates; warns and skips cleanly when the profile isn't set up).
+- **`scripts/make-appcast.sh`** — regenerates `appcast.xml` for a version from
+  the built DMG: GitHub-Release enclosure URL, `sparkle:version` numeric stamp
+  (CFBundleVersion mapping: major*10000+minor*100+patch, so 0.5.0 → 500),
+  EdDSA signature via Sparkle's `sign_update` against the keychain key,
+  `sparkle:releaseNotesLink` → the GitHub release page.
+- `scripts/make-app.sh` — now embeds the Sparkle framework
+  (`.build/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64`)
+  into `Contents/Frameworks`, adds `@executable_path/../Frameworks` rpath, and
+  stamps `Info.plist`: version from CHANGELOG heading (or argument), numeric
+  CFBundleVersion, SU keys (`SUFeedURL`, `SUPublicEDKey`,
+  `SUEnableAutomaticChecks`, `SUScheduledCheckInterval`,
+  `SUAutomaticallyUpdate`). Signing is deepest-first (framework → bundle);
+  passing `"Developer ID"` as second argument produces the notarizable
+  hardened-runtime build; no argument keeps ad-hoc for local dev.
+- `Package.swift` — Sparkle 2.10.1 dependency (SPM binary artifact; tools used
+  by scripts live in `.build/artifacts/sparkle/Sparkle/bin/`).
+
+### Changed
+- **Developer ID trust chain fixed on the build host** (operator context, not
+  code): the newly minted Developer ID Application cert
+  (`Marco Dal Moro (NGPL7S3YX3)`) chains to Apple's newer
+  **Developer ID Certification Authority, OU=G2** intermediate, which was not
+  installed on this Mac — `codesign` failed with "unable to build chain to
+  self-signed root". Fixed by fetching
+  `https://www.apple.com/certificateauthority/DeveloperIDG2CA.cer` into the
+  login keychain (this remains true for any future Mac rebuild: install the
+  G2 intermediate before first codesign).
+- `KB.md` — new §Updates (Sparkle) section; §Packaging updated for
+  Developer ID signing + the DMG + appcast release flow.
+- `AGENTS.md` — release procedure for this project now includes the DMG +
+  appcast steps.
+
 ## [0.4.0] — 2026-11-10
 
 ### Added

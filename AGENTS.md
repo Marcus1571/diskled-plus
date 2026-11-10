@@ -58,6 +58,14 @@ off-state visibility on a light menu bar, and the menu's B/s readout.
   Generic content only — no real hostnames/IPs/infra names in any of them.
 - Every pushed code change is a release (item 6 of USER.md's sequence): version bump,
   CHANGELOG entry, `STATUS.md`/`KB.md` sync, tag, GitHub Release, push.
+- **macOS release additions since v0.5.0** (after the version+docs commit, before
+  `gh release create`): `scripts/make-dmg.sh <version> "Developer ID"` (signs and
+  notarizes — requires the Developer ID keychain cert and the `diskledplus-notary`
+  notary profile; stapling included), then `scripts/make-appcast.sh <version>`
+  (regenerates `appcast.xml`, committed in the release commit), then upload the
+  DMG as the GitHub Release asset. Push order matters: tag + release (asset live)
+  before `git push origin main`, so the appcast's enclosure URL is valid once
+  main's feeder readers see it.
 - Commit identity for agent-made commits here: "Hermes LT <hermes-lt@legba.local>"
   (repo-local git config, matching sibling projects).
 - Two screenshot homes, by purpose (operator decided 2026-11-10 when README

@@ -27,6 +27,18 @@ Clicking it opens a menu with the live B/s readout taken over a display-only
 |------|------------|
 | <img src="docs/img/menu.png" width="300" alt="Menu: DiskLED-plus header, live Reads/Writes rates, Brightness, Start at Login checked, About, Quit"> | <img src="docs/img/menu-brightness.png" width="330" alt="Menu with the Brightness submenu open: ten steps 10–100%, checkmark on the active one"> |
 
+## Install
+
+Get it from [Releases](https://github.com/Marcus1571/diskled-plus/releases/latest) —
+download `DiskLED-plus-<version>.dmg`, drag the app to **/Applications**. The DMG
+is Developer ID–signed and notarized by Apple, so Gatekeeper opens it silently;
+the app updates itself (Sparkle checks at startup and weekly; updates install
+automatically, or force one via **Check for Updates…** in the menu). Enabling
+**Start at Login** in the menu bar menu is all the setup there is.
+
+Building the DMG yourself: `scripts/make-dmg.sh` → notarization requires the
+project's Apple credentials (see KB.md §Packaging and §Updates).
+
 ## Build and run
 
 ```

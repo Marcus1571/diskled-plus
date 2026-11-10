@@ -103,6 +103,34 @@ interactive shell use the absolute path `/usr/bin/log`.
 - Known good interaction: changing the value re-renders the current state at once,
   so a change is visible even while the light is currently steady ON.
 
+## Updates (Sparkle)
+
+- Bundled app checks for updates **at startup** and **weekly** (Sparkle 2,
+  `SUScheduledCheckInterval = 604800`, `SUAutomaticallyUpdate = true` — updates
+  install without a confirmation dialog once that preference is granted).
+  Feed: `Info.plist` `SUFeedURL` = raw.githubusercontent copy of this repo's
+  `appcast.xml`; update first run shows Sparkle's standard one-time
+  "Check automatically?" permission prompt.
+- **Verification chain:** the app embeds `SUPublicEDKey`
+  `4X6j0DXdJCmcxqe3fkMKWxKuuHhhM+rYrK5LauHe9UA=`; the appcast enclosure's EdDSA
+  signature (from Sparkle `sign_update`, private key in the operator's login
+  keychain, never in the repo) is what makes Sparkle accept an update. GitHub
+  signed the installer DMG with Developer ID; Apple notarized it.
+- **Numeric version mapping:** `CFBundleVersion` = major·10000 + minor·100 +
+  patch (0.5.0 → 500). `sparkle:version` in appcast.xml must use the same
+  mapping; Sparkle compares numerically. Don't bump patch by hand in both
+  files — regenerate the appcast with `scripts/make-appcast.sh`.
+- Menu: **Check for Updates…** (bundle launches only, like Start at Login).
+- Sparkle ships via SwiftPM (binary artifact); its framework is embedded by
+  `make-app.sh` into `Contents/Frameworks` and signed deepest-first — the
+  framework (with its XPC services and Autoupdate helper) is signed before
+  the app bundle so notarization sees a consistent tree.
+- Appcast lifecycle per release, in order: (1) `make-dmg.sh <v> "Developer ID"`,
+  (2) `make-appcast.sh <v>` → commit `appcast.xml`, (3) tag, (4) `gh release
+  create` with the DMG attached, (5) push main. The feed URL serves the *main*
+  branch's `appcast.xml`; it must not point at an enclosure that doesn't exist
+  yet, hence release-before-push.
+
 ## Packaging (.app bundle)
 
 - `scripts/make-app.sh` builds `.build/app/DiskLED-plus.app` from a fresh
