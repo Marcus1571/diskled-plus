@@ -39,20 +39,18 @@ visible blink; sustained load reads as steadily ON.
    off the main thread, it must stay self-contained — never introduce UI work off
    main.
 
-## Verification gaps (first on-device session — new code that has never run)
+## On-device status and standing checks
 
-The code was written without access to a Mac. Before trusting it, verify on real
-hardware (operator's Mac, checkout at `~/src/diskled-plus/`):
+Cleared 2026-11-10 (v0.2.0) against the written-but-never-run code: compile
+clean (one API-signature fix — see CHANGELOG), `IOBlockStorageDriver`
+"Statistics" keys confirmed, 33 Hz cadence confirmed with no coalescing, both
+LED halves verified rendering, steady-ON under sustained load. Evidence and
+the per-item verification list live in `KB.md` §Verification list and
+`findings.md` — do not re-derive them; extend the checks as the code evolves
+instead of repeating cleared ones.
 
-- Does `swift build` compile clean? Fix imports/API drift as needed.
-- Does the `"Statistics"` dictionary on `IOBlockStorageDriver` services actually
-  carry `Bytes (Read)` / `Bytes (Write)` / `Operations (Read)` / `Operations (Write)`
-  on this macOS build? Cross-check against `ioreg -l` output or `iostat` sources if
-  keys differ, then fix `DiskActivitySource.swift` and update KB.md.
-- Do 33 Hz icon swaps on `NSStatusItem` actually render furry-fast, or does the menu
-  bar throttle? If throttled, evaluate a custom `NSStatusItem` view or slightly
-  coarser rendering; **do not silently raise the tick interval** (see rule 2).
-- Does the off-state remain visible on both a dark and a light menu bar?
+Still on the operator's eyes: perceived blink smoothness over real use,
+off-state visibility on a light menu bar, and the menu's B/s readout.
 
 ## Working here
 
