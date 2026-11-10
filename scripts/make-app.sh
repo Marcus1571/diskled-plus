@@ -56,6 +56,8 @@ cat > "$CONTENTS/Info.plist" <<PLIST
 	<string>${NUMERIC_VERSION}</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>13.0</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
 	<key>LSUIElement</key>
 	<true/>
 	<key>NSHighResolutionCapable</key>
@@ -73,6 +75,20 @@ cat > "$CONTENTS/Info.plist" <<PLIST
 </dict>
 </plist>
 PLIST
+
+# App icon: rendered by scripts/make-icon.swift, packed into AppIcon.icns.
+ICON_PNG=".build/icon/AppIcon-1024.png"
+ICONSET=".build/icon/AppIcon.iconset"
+mkdir -p .build/icon
+swift scripts/make-icon.swift "$ICON_PNG" >/dev/null
+rm -rf "$ICONSET"
+mkdir -p "$ICONSET"
+for spec in 16 32 128 256 512; do
+    double=$((spec * 2))
+    sips -z "$spec" "$spec" "$ICON_PNG" --out "$ICONSET/icon_${spec}x${spec}.png" >/dev/null
+    sips -z "$double" "$double" "$ICON_PNG" --out "$ICONSET/icon_${spec}x${spec}@2x.png" >/dev/null
+done
+iconutil -c icns -o "$CONTENTS/Resources/AppIcon.icns" "$ICONSET"
 
 # Sign deepest-first: the Sparkle framework (which carries XPC services and
 # the Autoupdate helper) needs a valid signature before the app can even

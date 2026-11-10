@@ -3,15 +3,17 @@
 ## Where the project stands right now
 
 **Verified working on device (2026-11-10, operator's Mac, macOS 27.2/arm64).**
-v0.5.0: the app builds clean, runs, polls IOKit at 33 Hz, and blinks — idle
+v0.5.1: the app builds clean, runs, polls IOKit at 33 Hz, and blinks — idle
 shows occasional green read blinks; sustained write load locks the icon
-steadily both-lit (green + red) as designed. **Brightness submenu verified
-end-to-end** (ten steps, default 60%, persisted, operator setting migrated
-across the defaults-domain change). **Proper distribution exists**: Developer
-ID–signed `.app` (Sparkle embedded, hardened runtime), notarized + stapled DMG,
-EdDSA-signed `appcast.xml` per release, and Sparkle self-updating with startup
-+ weekly checks and a **Check for Updates…** menu voice. The `/Applications`
-copy is the everyday way to run it from now on.
+steadily both-lit (green + red) as designed. **Real app icon now** (generated
+at package time from the LED colors; no more default placeholder in
+/Applications or the About dialog) and the About dialog is rewritten. **v0.5.0
+shipped the distribution stack**: Developer ID–signed `.app` (Sparkle
+embedded, hardened runtime), notarized + stapled DMG, EdDSA-signed
+`appcast.xml` per release, and Sparkle self-updating with startup + weekly
+checks and a **Check for Updates…** menu voice. The `/Applications` copy is
+the everyday way to run it; shipping v0.5.1 doubles as the first live
+rehearsal of the Sparkle auto-update flow on this machine (0.5.0 → 0.5.1).
 
 ## What exists
 

@@ -150,6 +150,11 @@ interactive shell use the absolute path `/usr/bin/log`.
   never intercepts local installs; distributing to *other* machines would need
   Developer ID signing + notarization (parked until such an identity exists).
 - Install: `cp -R .build/app/DiskLED-plus.app /Applications/`.
+- **App icon:** generated at package time by `scripts/make-icon.swift` (a
+  Swift script drawing via CoreGraphics — same lit colors as the LED bars),
+  converted through an `.iconset` into `Resources/AppIcon.icns` and declared
+  via `CFBundleIconFile`. No `.icns` binary lives in git; the README's
+  rendered copy is `docs/img/app-icon.png`.
 
 ## Start at Login
 

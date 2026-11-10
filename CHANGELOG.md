@@ -1,5 +1,24 @@
 # CHANGELOG.md
 
+## [0.5.1] — 2026-11-10
+
+### Added
+- **App icon** — the app now has a real one (previously the default gray
+  grid placeholder). `scripts/make-icon.swift` renders it at package time:
+  dark rounded plate, the two LED bars in the app's actual colors
+  (`readLit`/`writeLit`), both lit, with lens-bright cores and glow; packed
+  into `Resources/AppIcon.icns` by `scripts/make-app.sh` (CFBundleIconFile).
+  No binary assets in the repo — the icns is generated during packaging, and
+  `docs/img/app-icon.png` (the rendered PNG) is committed for the README.
+- `Sources/DiskLEDPlus/AppDelegate.swift` — **About dialog rewritten**:
+  version in the title (read from the bundle, blank for bare-binary
+  launches), organized paragraphs (what it does / LED legend with color
+  squares / the no-averaging point / license + inspiration credit), repo URL.
+
+### Changed
+- `README.md` — app icon shown in "What it looks like".
+- `KB.md` — Packaging section notes the generated icon.
+
 ## [0.5.0] — 2026-11-10
 
 ### Added

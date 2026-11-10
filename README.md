@@ -12,6 +12,13 @@ Fully open source (MIT), builds in one command with SwiftPM, no admin rights nee
 
 ## What it looks like
 
+The app icon — same dark plate, same two bars, both lit (also what the About
+dialog shows):
+
+<div align="center">
+  <img src="docs/img/app-icon.png" width="110" alt="DiskLED-plus app icon: dark rounded square with a green bar (left) and a red bar (right), both lit">
+</div>
+
 The status item is a 16×16 pt square split into two vertical rectangles —
 **left green = reads, right red = writes** — lit for every tick that actually
 moved data, near-dark when a tick had none:

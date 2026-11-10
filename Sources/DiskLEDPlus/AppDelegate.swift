@@ -269,14 +269,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     @objc private func showAbout() {
+        let version = (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String) ?? ""
+        let title = version.isEmpty ? "DiskLED-plus" : "DiskLED-plus \(version)"
         let alert = NSAlert()
-        alert.messageText = "DiskLED-plus"
+        alert.messageText = title
         alert.informativeText = """
-        Instantaneous disk activity in the menu bar.
-        Left (green): reads. Right (red): writes.
-        Every I/O tick blinks — nothing is smoothed away.
+        Disk activity, shown the way hardware used to do it:
+        one LED, blinking for every single tick of I/O — 33 times per
+        second, nothing averaged, nothing rounded up, nothing smoothed away.
 
-        Inspired by Helge Klein's DiskLED for Windows.
+        🟩 left bar — reads
+        🟥 right bar — writes
+        ⬛ both dark — the disk is idle
+
+        When a meter masks small reads with averages, it also hides
+        exactly the activity this app was built to make visible.
+
+        Original Swift, MIT. Inspired by Helge Klein's DiskLED for
+        Windows — no code or assets were copied, just the point.
+        github.com/Marcus1571/diskled-plus
         """
         alert.alertStyle = .informational
         alert.runModal()
