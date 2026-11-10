@@ -1,5 +1,33 @@
 # CHANGELOG.md
 
+## [0.3.0] — 2026-11-10
+
+### Added
+- `Sources/DiskLEDPlus/AppDelegate.swift` — Brightness menu voice: a `Brightness`
+  submenu with ten steps (10%, 20%, … 100%), checkmark on the active one, default
+  **60%** on first launch. Selection is persisted (`UserDefaults` key
+  `ledBrightnessPercent`, clamped on read), and choosing a value re-renders the
+  current LED state immediately so the change is visible between ticks.
+- `Sources/DiskLEDPlus/LEDIconRenderer.swift` — brightness support: the lit colors
+  are drawn at alpha = brightness %, so a value like 60% reads as the same hue
+  dimmed against the menu bar rather than a color shift. Icons are cached per
+  (state, brightness) pair. The off-state colors are deliberately untouched — "off"
+  must not become "barely lit".
+
+### Fixed
+- `Sources/DiskLEDPlus/DiskActivitySource.swift` — the "Statistics property
+  missing" warning introduced with the property-lookup fix logged on every tick
+  while a transiently-matched entry lacks the dictionary (observed in bursts
+  during mount/unmount races on this machine). Now logged once per process and
+  suppressed after; behavior unchanged (missing → zero deltas, silent LED).
+
+### Verified on device
+- Brightness submenu shows all ten steps with ✓ on 60% (screenshot); clicking
+  40% persisted to `UserDefaults` and clicking 60% restored it (read back from
+  `defaults`); 60% default renders visibly dimmer than the previous 100% icons.
+- Menu B/s readout live-checked during the interaction (Reads/Writes lines
+  updating while the menu was open).
+
 ## [0.2.0] — 2026-11-10
 
 First on-device verified release (operator's Mac, macOS 27.2 / arm64). **The app

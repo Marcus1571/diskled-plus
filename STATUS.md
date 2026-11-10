@@ -3,11 +3,12 @@
 ## Where the project stands right now
 
 **Verified working on device (2026-11-10, operator's Mac, macOS 27.2/arm64).**
-v0.2.0: the app builds clean, runs, polls IOKit at 33 Hz, and blinks — idle
+v0.3.0: the app builds clean, runs, polls IOKit at 33 Hz, and blinks — idle
 shows occasional green read blinks; sustained write load locks the icon
 steadily both-lit (green + red) as designed. Screenshot verification of the
 icon's lit states was done by zooming onto the System-Events-reported status
-item frame.
+item frame. **Brightness submenu verified end-to-end on device** (ten steps,
+✓ on 60% default, selection persisted to `UserDefaults`, visible re-render).
 
 ## What exists
 
@@ -18,7 +19,8 @@ item frame.
 - `LEDIconRenderer` — programmatic square icon: two vertical rectangles, left green
   (reads), right red (writes); four cached states (off / R / W / both); not-template.
 - `AppDelegate` — 30 ms `Timer` (`tolerance = 0`), blink-from-delta with no smoothing,
-  menu with live B/s readout (1 s window, display-only) and About/Quit.
+  menu with live B/s readout (1 s window, display-only), the Brightness submenu
+  (10 steps, default 60%, persisted — see KB.md §Brightness), and About/Quit.
 - Opt-in debug tracing (`DISKLED_DEBUG=1`, unified log, see KB.md §Debug tracing).
 
 ## Next steps (in order)

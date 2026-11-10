@@ -39,6 +39,11 @@ sustained activity produces contiguous lit ticks, which read as steadily ON.
   options)` in its 4-argument returning form; the 5-argument out-param variant
   does not exist in the current Swift IOKit overlay (compile error caught on
   first on-device build).
+- Transiently, a matched `IOBlockStorageDriver` entry can lack the `Statistics`
+  dictionary (observed in short bursts around mount/unmount races on this
+  machine, e.g. 00:47 and again at 01:43 on 2026-11-10). The app treats a
+  missing dictionary as zero contribution (no fake blink) and logs this once
+  per process, not per tick.
 - Read-only; requires no root/admin.
 - `kIOMainPortDefault` (min macOS 12; package claims 13+).
 - Deliberate choice over matching bare `IOMedia`: IOMedia also matches partitions
@@ -74,8 +79,25 @@ interactive shell use the absolute path `/usr/bin/log`.
 ## Menu
 
 - Header "DiskLED-plus"; live lines "Reads — X/s" and "Writes — X/s" refreshed on
-  menu open from the last ~1 s window; About dialog; Quit (⌘Q). Nothing else ships
-  (no preferences, no installer behavior).
+  menu open from the last ~1 s window (live-verified on device while the menu stays
+  open); About dialog; Quit (⌘Q). Nothing else ships (no preferences window, no
+  installer behavior).
+
+## Brightness
+
+- Right-click (any click on the status item) → menu → **Brightness** → ten items:
+  `10%` `20%` `30%` `40%` `50%` `60%` `70%` `80%` `90%` `100%`. Checkmark marks the
+  active value. **Default 60%** (operator-set).
+- Persisted immediately on selection: `UserDefaults.standard` key
+  `ledBrightnessPercent` (integer 10–100, read clamped) — for the bare-binary
+  process this lands in `~/Library/Preferences/DiskLEDPlus.plist` (verify with
+  `defaults read DiskLEDPlus ledBrightnessPercent`). First launch without the key
+  uses 60 via `register(defaults:)` — the default cannot drift upward unnoticed.
+- Effect: lit colors are drawn at alpha = value/100 — same hue, dimmer against the
+  menu bar, never a different color. The off-state is unaffected by the setting
+  (off means off). 100% reproduces the original full-strength look.
+- Known good interaction: changing the value re-renders the current state at once,
+  so a change is visible even while the light is currently steady ON.
 
 ## Build and run
 
