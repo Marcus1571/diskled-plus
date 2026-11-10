@@ -1,5 +1,6 @@
 import AppKit
 import os
+import ServiceManagement
 
 private let log = Logger(subsystem: "com.diskledplus.app", category: "app")
 
@@ -11,6 +12,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         static let tickInterval: TimeInterval = 0.030
         static let defaultBrightnessPercent = 60
         static let brightnessKey = "ledBrightnessPercent"
+        // 0.3.x bare-binary launches stored preferences under the process-name
+        // domain ("DiskLEDPlus"); the bundled app uses the bundle identifier
+        // domain ("com.diskledplus.app"). Carried over on first bundled launch.
+        static let legacyDefaultsSuite = "DiskLEDPlus"
     }
 
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
@@ -19,6 +24,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var timer: Timer?
     private var lastRenderedState: LEDState?
     private var brightnessMenuItem: NSMenuItem?
+    private var loginItemMenuItem: NSMenuItem?
 
     // LED brightness in percent of the lit colors' full strength (10–100). The
     // operator set the default explicitly — never "bump it back up to be visible".
@@ -43,10 +49,39 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let debugTrace = ProcessInfo.processInfo.environment["DISKLED_DEBUG"] == "1"
     private var lastBeatAt: DispatchTime?
 
+    /// True when running from a proper .app bundle (vs. the bare release binary).
+    private var isBundled: Bool {
+        Bundle.main.bundleURL.pathExtension == "app"
+    }
+
+    /// Current start-at-login state according to macOS (only meaningful when bundled).
+    private var isStartAtLoginEnabled: Bool {
+        guard isBundled else { return false }
+        return SMAppService.mainApp.status == .enabled
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Migrate the pre-0.4.0 bare-binary brightness setting before register()
+        // runs, so the migrated value takes precedence over the registered default.
+        if UserDefaults.standard.object(forKey: Constants.brightnessKey) == nil,
+           let legacy = UserDefaults(suiteName: Constants.legacyDefaultsSuite),
+           let migrated = legacy.object(forKey: Constants.brightnessKey) as? Int {
+            UserDefaults.standard.set(migrated, forKey: Constants.brightnessKey)
+            log.info("migrated brightness preference from bare-binary defaults domain: \(migrated, privacy: .public)%")
+        }
         UserDefaults.standard.register(defaults: [Constants.brightnessKey: Constants.defaultBrightnessPercent])
         let stored = UserDefaults.standard.integer(forKey: Constants.brightnessKey)
         brightnessPercent = min(max(stored, 10), 100)
+        // One-shot enablement for scripted installs: --enable-login-item registers
+        // the login item without needing a click through the menu first.
+        if isBundled, CommandLine.arguments.contains("--enable-login-item") {
+            do {
+                try SMAppService.mainApp.register()
+                log.info("start-at-login register (--enable-login-item) ok, status=\(SMAppService.mainApp.status.rawValue, privacy: .public)")
+            } catch {
+                log.error("start-at-login register (--enable-login-item) failed: \(error.localizedDescription, privacy: .public)")
+            }
+        }
         buildMenu()
         render(.off)
         let t = Timer(timeInterval: Constants.tickInterval, repeats: true) { [weak self] _ in
@@ -141,6 +176,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         brightnessMenuItem = brightnessItem
         menu.addItem(.separator())
 
+        // Start-at-login is only meaningful from a proper .app bundle; from the
+        // bare binary the menu voice would silently fail, so it is withheld.
+        if isBundled {
+            let loginItem = NSMenuItem(title: "Start at Login",
+                                       action: #selector(toggleStartAtLogin(_:)),
+                                       keyEquivalent: "")
+            loginItem.target = self
+            loginItem.state = isStartAtLoginEnabled ? .on : .off
+            menu.addItem(loginItem)
+            loginItemMenuItem = loginItem
+            menu.addItem(.separator())
+        }
+
         let about = NSMenuItem(title: "About DiskLED-plus",
                                action: #selector(showAbout),
                                keyEquivalent: "")
@@ -179,6 +227,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         render(lastRenderedState ?? .off)
         log.info("LED brightness set to \(percent)% (persisted)")
+    }
+
+    // MARK: - Start at Login
+
+    @objc private func toggleStartAtLogin(_ sender: NSMenuItem) {
+        do {
+            if sender.state == .on {
+                try SMAppService.mainApp.unregister()
+            } else {
+                try SMAppService.mainApp.register()
+            }
+        } catch {
+            log.error("start-at-login toggle failed: \(error.localizedDescription, privacy: .public)")
+            let alert = NSAlert()
+            alert.messageText = "Could not change Start at Login"
+            alert.informativeText = "\(error.localizedDescription)"
+            alert.alertStyle = .warning
+            alert.runModal()
+        }
+        sender.state = isStartAtLoginEnabled ? .on : .off
+        log.info("start-at-login now enabled=\(self.isStartAtLoginEnabled, privacy: .public)")
     }
 
     @objc private func showAbout() {
