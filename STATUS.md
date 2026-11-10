@@ -12,8 +12,9 @@ shipped the distribution stack**: Developer ID–signed `.app` (Sparkle
 embedded, hardened runtime), notarized + stapled DMG, EdDSA-signed
 `appcast.xml` per release, and Sparkle self-updating with startup + weekly
 checks and a **Check for Updates…** menu voice. The `/Applications` copy is
-the everyday way to run it; shipping v0.5.1 doubles as the first live
-rehearsal of the Sparkle auto-update flow on this machine (0.5.0 → 0.5.1).
+the everyday way to run it; **the first live Sparkle rehearsal succeeded**
+(0.5.0 → 0.5.1 self-updated silently on device, 18:55 local, straight from
+the in-repo appcast).
 
 ## What exists
 
