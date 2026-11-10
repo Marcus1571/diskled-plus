@@ -1,24 +1,41 @@
 #!/bin/sh
 # Builds .build/app/DiskLED-plus.app from a fresh release build.
 #
-# Usage: scripts/make-app.sh [version]
-#   Version defaults to the most recent version heading in CHANGELOG.md.
-#   Output is ad-hoc signed (no Developer ID on the build host — notarization
-#   is parked until a Developer ID exists; see KB.md §Packaging).
+# Usage: scripts/make-app.sh [version] [identity]
+#   version — defaults to the most recent version heading in CHANGELOG.md.
+#   identity — Apple codesign identity for the final signed build:
+#     pass "Developer ID" to sign with the Developer ID Application cert
+#     (hardened runtime, timestamped — required for notarization), or omit to
+#     sign ad-hoc (local development installs).
 #
-#   Install: cp -R ".build/app/DiskLED-plus.app" /Applications/
+# Output: .build/app/DiskLED-plus.app
+# Install: cp -R ".build/app/DiskLED-plus.app" /Applications/
 set -eu
 
 VERSION="${1:-$(grep -m1 -oE '^## \[[0-9]+\.[0-9]+\.[0-9]+\]' CHANGELOG.md | tr -d '[]' | sed 's/^## //')}"
+IDENTITY="${2:-}"
 APP_DIR=".build/app/DiskLED-plus.app"
 CONTENTS="$APP_DIR/Contents"
+
+# Sparkle artifacts from the SwiftPM build (path: .build/artifacts/...):
+SPARKLE_FRAMEWORK=".build/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework"
+
+# Numeric build stamp derived from X.Y.Z (CFBundleVersion): 0.5.0 -> 500.
+NUMERIC_VERSION="$(echo "$VERSION" | awk -F. '{print $1*10000+$2*100+$3}')"
 
 swift build -c release
 
 rm -rf "$APP_DIR"
-mkdir -p "$CONTENTS/MacOS" "$CONTENTS/Resources"
+mkdir -p "$CONTENTS/MacOS" "$CONTENTS/Resources" "$CONTENTS/Frameworks"
 
 cp .build/release/DiskLEDPlus "$CONTENTS/MacOS/DiskLEDPlus"
+
+# Sparkle is linked as a dynamic framework; the binary expects it at
+# @executor_path/../Frameworks. The framework ships with its XPC services and
+# the Autoupdate helper — copy the whole thing.
+cp -R "$SPARKLE_FRAMEWORK" "$CONTENTS/Frameworks/"
+install_name_tool -add_rpath "@executable_path/../Frameworks" \
+    "$CONTENTS/MacOS/DiskLEDPlus" 2>/dev/null || true
 
 cat > "$CONTENTS/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -36,18 +53,37 @@ cat > "$CONTENTS/Info.plist" <<PLIST
 	<key>CFBundleShortVersionString</key>
 	<string>${VERSION}</string>
 	<key>CFBundleVersion</key>
-	<string>${VERSION}</string>
+	<string>${NUMERIC_VERSION}</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>13.0</string>
 	<key>LSUIElement</key>
 	<true/>
 	<key>NSHighResolutionCapable</key>
 	<true/>
+	<key>SUFeedURL</key>
+	<string>https://raw.githubusercontent.com/Marcus1571/diskled-plus/main/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>4X6j0DXdJCmcxqe3fkMKWxKuuHhhM+rYrK5LauHe9UA=</string>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUScheduledCheckInterval</key>
+	<integer>604800</integer>
+	<key>SUAutomaticallyUpdate</key>
+	<true/>
 </dict>
 </plist>
 PLIST
 
-codesign --force --sign - "$APP_DIR"
+# Sign deepest-first: the Sparkle framework (which carries XPC services and
+# the Autoupdate helper) needs a valid signature before the app can even
+# attempt notarization.
+if [ -n "$IDENTITY" ]; then
+    codesign --force --options runtime --timestamp --deep --sign "$IDENTITY" "$CONTENTS/Frameworks/Sparkle.framework"
+    codesign --force --options runtime --timestamp --sign "$IDENTITY" "$APP_DIR"
+else
+    codesign --force --deep --sign - "$CONTENTS/Frameworks/Sparkle.framework"
+    codesign --force --deep --sign - "$APP_DIR"
+fi
 
-echo "Built $APP_DIR (version ${VERSION}, ad-hoc signed)"
+echo "Built $APP_DIR (version ${VERSION}, build ${NUMERIC_VERSION})"
 echo "Install:  cp -R \"$APP_DIR\" /Applications/"

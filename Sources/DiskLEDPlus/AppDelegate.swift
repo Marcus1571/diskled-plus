@@ -1,6 +1,7 @@
 import AppKit
 import os
 import ServiceManagement
+import Sparkle
 
 private let log = Logger(subsystem: "com.diskledplus.app", category: "app")
 
@@ -25,6 +26,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var lastRenderedState: LEDState?
     private var brightnessMenuItem: NSMenuItem?
     private var loginItemMenuItem: NSMenuItem?
+    // Sparkle: nil for bare-binary launches (Sparkle can only update a bundled app).
+    private var updaterController: SPUStandardUpdaterController?
 
     // LED brightness in percent of the lit colors' full strength (10–100). The
     // operator set the default explicitly — never "bump it back up to be visible".
@@ -81,6 +84,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             } catch {
                 log.error("start-at-login register (--enable-login-item) failed: \(error.localizedDescription, privacy: .public)")
             }
+        }
+        if isBundled {
+            // Sparkle's scheduler comes from Info.plist (check at startup, weekly
+            // interval); the first-run permission prompt is Sparkle's standard flow.
+            updaterController = SPUStandardUpdaterController(startingUpdater: true,
+                                                             updaterDelegate: nil,
+                                                             userDriverDelegate: nil)
         }
         buildMenu()
         render(.off)
@@ -187,6 +197,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             menu.addItem(loginItem)
             loginItemMenuItem = loginItem
             menu.addItem(.separator())
+
+            if let updater = updaterController {
+                let checkUpdates = NSMenuItem(title: "Check for Updates…",
+                                              action: #selector(SPUStandardUpdaterController.checkForUpdates(_:)),
+                                              keyEquivalent: "")
+                checkUpdates.target = updater
+                menu.addItem(checkUpdates)
+            }
         }
 
         let about = NSMenuItem(title: "About DiskLED-plus",
