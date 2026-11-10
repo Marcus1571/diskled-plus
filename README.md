@@ -10,6 +10,23 @@ today's router LEDs do.
 
 Fully open source (MIT), builds in one command with SwiftPM, no admin rights needed.
 
+## What it looks like
+
+The status item is a 16×16 pt square split into two vertical rectangles —
+**left green = reads, right red = writes** — lit for every tick that actually
+moved data, near-dark when a tick had none:
+
+| Off | Reads | Writes | Both |
+|-----|-------|--------|------|
+| <img src="docs/img/led-off.png" width="72" alt="LED off, both halves near-dark"> | <img src="docs/img/led-reads.png" width="72" alt="reads blinking green on the left"> | <img src="docs/img/led-writes.png" width="72" alt="writes blinking red on the right"> | <img src="docs/img/led-both.png" width="72" alt="reads and writes lit together"> |
+
+Clicking it opens a menu with the live B/s readout taken over a display-only
+~1 s window, a ten-step **Brightness** setting, and **Start at Login**:
+
+| Menu | Brightness |
+|------|------------|
+| <img src="docs/img/menu.png" width="300" alt="Menu: DiskLED-plus header, live Reads/Writes rates, Brightness, Start at Login checked, About, Quit"> | <img src="docs/img/menu-brightness.png" width="330" alt="Menu with the Brightness submenu open: ten steps 10–100%, checkmark on the active one"> |
+
 ## Build and run
 
 ```

@@ -60,5 +60,8 @@ off-state visibility on a light menu bar, and the menu's B/s readout.
   CHANGELOG entry, `STATUS.md`/`KB.md` sync, tag, GitHub Release, push.
 - Commit identity for agent-made commits here: "Hermes LT <hermes-lt@legba.local>"
   (repo-local git config, matching sibling projects).
-- Operator drops UI screenshots into `screenshots/` (gitignored, never commit the
-  PNGs).
+- Two screenshot homes, by purpose (operator decided 2026-11-10 when README
+  screenshots shipped): `screenshots/` is the gitignored drop-zone for
+  *verification* artifacts — never commit those PNGs. Public-facing images
+  embedded in README/KB live under `docs/img/` and ARE committed. Recipes for
+  capturing them live in `findings.md`.

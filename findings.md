@@ -84,3 +84,39 @@ no full Xcode project). Results, with evidence:
   a confusing "too many arguments" — use the absolute path); `log stream`
   needs `--level debug` to see debug-level messages. The tiny round dot in the
   menu bar near the right side belongs to the sibling app usagebar.
+
+## README screenshot capture recipe (2026-11-10)
+
+How the six images in `docs/img/` (v0.4.0-era) were captured live, so a future
+session can rerun or extend the set. The installed app must be running from
+/Applications.
+
+- **Status-item geometry:** `osascript -e 'tell application "System Events" to
+  tell process "DiskLEDPlus" to get {position, size} of menu bar item 1 of
+  menu bar 1'` → e.g. `1545, 3, 24, 24` (points, x,y,w,h). `menu bar 2` does
+  not exist on this macOS build (older notes used it).
+- **LED tiles** (`led-off/led-reads/led-writes/led-both.png`): crop the item
+  region with `screencapture -x -R1545,0,24,30 <file>` — output is 2x retina
+  (48×60 px); the 16×16 pt icon occupies pixels ~x9–40, y14–46.
+- **Classification without eyeballing every shot:** ImageMagick mean-channel
+  sampling per half — left (green) `magick f.png -crop 16x32+9+14 +repage -scale
+  1x1! -format "%[fx:int(255*u.g)]" info:` (lit ≈165, off ≈43); right (red)
+  same crop offset +24+14 against `%[fx:int(255*u.r)]` (lit ≈136). On this
+  machine the left/green is almost permanently lit under background activity,
+  so a writes-only frame is scarce: fire a big `dd` write in the background and
+  burst-capture ~40 shots at ~80 ms spacing, then fish for `leftG=43`.
+  40 samples yielded 3 writes-only ticks.
+- **State generator:** `dd if=/dev/zero of=.build/bigfile bs=1m count=8192
+  conv=notrunc` (delete after) while `cat <bigfile> > /dev/null` runs in
+  parallel for the both-lit shot. Off/read shots pop up on their own in short
+  idle bursts.
+- **Menu shots:** open with `osascript ... click menu bar item 1 of menu bar 1`,
+  sleep ~0.6 s while it's open, `screencapture -x -R1520,0,320,340
+  /tmp/menu-raw.png`, close with `key code 53`. Brightness submenu: click
+  `menu item "Brightness" of menu 1 of menu bar item 1 of menu bar 1`, capture
+  `-R1520,0,340,385` (385 point height — shorter clips `100%` at the bottom).
+  Crop backgrounds away with magick (`-crop 452x512+40+0` for the menu; the
+  bright capture keeps two dim fragments of the operator's own window behind
+  the menu — benign, real-screenshot furniture on a public repo).
+- The LED state in a menu shot is whatever the moment had (menu.png caught
+  both-lit, bright-raw reads-lit) — a cosmetic lottery, not a bug.
