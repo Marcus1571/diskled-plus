@@ -1,5 +1,37 @@
 # CHANGELOG.md
 
+## [0.4.0] — 2026-11-10
+
+### Added
+- `scripts/make-app.sh` — packages a fresh release build into a proper `.app`
+  bundle at `.build/app/DiskLED-plus.app`: minimal `Info.plist` (bundle ID
+  `com.diskledplus.app`, `LSUIElement`, `LSMinimumSystemVersion 13.0`,
+  `NSHighResolutionCapable`), version stamped from the latest CHANGELOG heading
+  (overridable via argument), ad-hoc codesigned — the build host has no Apple
+  Developer ID, so notarization remains parked (see KB.md §Packaging). Install
+  by `cp -R` to `/Applications/`.
+- `Sources/DiskLEDPlus/AppDelegate.swift` — **Start at Login** menu voice, shown
+  only when running from a `.app` bundle (withheld for the bare binary, where
+  `SMAppService.mainApp` registration cannot work): toggles
+  `SMAppService.mainApp.register()/unregister()`, with the checkmark derived
+  from the live `SMAppService.mainApp.status` instead of a stored flag. A
+  one-shot `--enable-login-item` launch argument performs the registration for
+  scripted installs. Errors surface as a warning dialog (and into the unified
+  log).
+- Defaults migration in `applicationDidFinishLaunching`: before
+  `register(defaults:)`, a first bundled launch copies `ledBrightnessPercent`
+  from the pre-0.4.0 bare-binary defaults domain (`DiskLEDPlus`) into the
+  bundle-identifier domain (`com.diskledplus.app`) if the new domain has no
+  stored value — the operator's existing setting (50%) carried over.
+
+### Changed
+- `KB.md` — new §Packaging and §Start at Login sections; §Menu, §Brightness and
+  §Build and run updated for the bundle and the defaults-domain change.
+- `README.md` — Build and run section now points to `make-app.sh` +
+  `/Applications` for everyday use.
+- `STATUS.md` — current-state and next-steps updated (packaging shipped;
+  operator evaluation now happens against the installed app).
+
 ## [0.3.0] — 2026-11-10
 
 ### Added

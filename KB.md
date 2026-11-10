@@ -80,8 +80,8 @@ interactive shell use the absolute path `/usr/bin/log`.
 
 - Header "DiskLED-plus"; live lines "Reads — X/s" and "Writes — X/s" refreshed on
   menu open from the last ~1 s window (live-verified on device while the menu stays
-  open); About dialog; Quit (⌘Q). Nothing else ships (no preferences window, no
-  installer behavior).
+  open); Brightness (§Brightness); Start at Login (§Start at Login, bundle
+  launches only); About dialog; Quit (⌘Q). No preferences window ships.
 
 ## Brightness
 
@@ -89,17 +89,57 @@ interactive shell use the absolute path `/usr/bin/log`.
   `10%` `20%` `30%` `40%` `50%` `60%` `70%` `80%` `90%` `100%`. Checkmark marks the
   active value. **Default 60%** (operator-set).
 - Persisted immediately on selection: `UserDefaults.standard` key
-  `ledBrightnessPercent` (integer 10–100, read clamped) — for the bare-binary
-  process this lands in `~/Library/Preferences/DiskLEDPlus.plist` (verify with
-  `defaults read DiskLEDPlus ledBrightnessPercent`). First launch without the key
-  uses 60 via `register(defaults:)` — the default cannot drift upward unnoticed.
+  `ledBrightnessPercent` (integer 10–100, read clamped). It lands in
+  `~/Library/Preferences/com.diskledplus.app.plist` when run from the .app bundle
+  (verify with `defaults read com.diskledplus.app ledBrightnessPercent`);
+  pre-0.4.0 bare-binary launches stored it in `DiskLEDPlus.plist`, and the first
+  bundled launch migrates any existing value across *before* `register(defaults:)`,
+  so the migrated value wins over the default (the 0.3.0-operator setting of 50%
+  migrated on first run). First launch without any stored key uses 60 via
+  `register(defaults:)` — the default cannot drift upward unnoticed.
 - Effect: lit colors are drawn at alpha = value/100 — same hue, dimmer against the
   menu bar, never a different color. The off-state is unaffected by the setting
   (off means off). 100% reproduces the original full-strength look.
 - Known good interaction: changing the value re-renders the current state at once,
   so a change is visible even while the light is currently steady ON.
 
+## Packaging (.app bundle)
+
+- `scripts/make-app.sh` builds `.build/app/DiskLED-plus.app` from a fresh
+  `swift build -c release`: the bare binary plus a minimal `Info.plist`. No Xcode
+  project; the script is the whole package step.
+- Bundle identity: bundle ID `com.diskledplus.app`; on disk the bundle is named
+  `DiskLED-plus.app`, the executable inside is `DiskLEDPlus`.
+- `LSUIElement = true` (menu-bar-only, no Dock icon — belt-and-braces with the
+  app's own `.accessory` activation policy), `LSMinimumSystemVersion = 13.0`,
+  `NSHighResolutionCapable = true`. No bundle icon ships; the visible icon is the
+  programmatic status-bar image.
+- Version stamp: `CFBundleShortVersionString` / `CFBundleVersion` default to the
+  latest `## [X.Y.Z]` heading in `CHANGELOG.md`; pass a version explicitly for a
+  pre-CHANGELOG build (`scripts/make-app.sh 0.4.1`).
+- Signing: **ad-hoc** (`codesign --sign -`) — the build host holds no Apple
+  Developer ID. Locally built apps carry no quarantine attribute, so Gatekeeper
+  never intercepts local installs; distributing to *other* machines would need
+  Developer ID signing + notarization (parked until such an identity exists).
+- Install: `cp -R .build/app/DiskLED-plus.app /Applications/`.
+
+## Start at Login
+
+- Menu → **Start at Login**: the checkmark is re-derived from the live
+  `SMAppService.mainApp.status` on every toggle — macOS is the source of truth,
+  never a UserDefaults flag. Toggling calls `register()` / `unregister()`; the
+  first registration may need one-time approval in
+  System Settings → General → Login Items.
+- The menu voice appears **only when launched from the .app bundle**; from the
+  bare binary it is withheld (`SMAppService.mainApp` cannot register a
+  non-bundle executable, so a voice there would be a liar button).
+- Scripted installs can register without opening the menu: launch the bundle
+  once with `--enable-login-item`; the app performs the registration at startup
+  and logs the resulting status (unified log, §Debug tracing).
+
 ## Build and run
+
+Development-style run (bare binary):
 
 ```
 git clone git@github.com:Marcus1571/diskled-plus.git ~/src/diskled-plus
@@ -107,7 +147,11 @@ cd ~/src/diskled-plus && swift build -c release
 .build/release/DiskLEDPlus
 ```
 
-Kill/later removal: quit via menu. No launch agent ships yet (planned post-0.2).
+Everyday install (bundled, start-at-login capable): `scripts/make-app.sh` then
+`cp -R .build/app/DiskLED-plus.app /Applications/` (details in §Packaging); enable
+the login item from the app menu (§Start at Login).
+
+Quit via the app menu.
 
 ## Verification list (first on-device build)
 

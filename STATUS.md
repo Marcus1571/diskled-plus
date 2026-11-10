@@ -3,12 +3,17 @@
 ## Where the project stands right now
 
 **Verified working on device (2026-11-10, operator's Mac, macOS 27.2/arm64).**
-v0.3.0: the app builds clean, runs, polls IOKit at 33 Hz, and blinks — idle
+v0.4.0: the app builds clean, runs, polls IOKit at 33 Hz, and blinks — idle
 shows occasional green read blinks; sustained write load locks the icon
 steadily both-lit (green + red) as designed. Screenshot verification of the
 icon's lit states was done by zooming onto the System-Events-reported status
 item frame. **Brightness submenu verified end-to-end on device** (ten steps,
-✓ on 60% default, selection persisted to `UserDefaults`, visible re-render).
+default 60%, selection persisted to `UserDefaults`, operator set 50%, migrated
+into the bundle-identifier domain on first bundled launch). **v0.4.0 adds real
+packaging**: `scripts/make-app.sh` produces an ad-hoc-signed
+`DiskLED-plus.app`, installed in `/Applications`, with a **Start at Login**
+toggle (`SMAppService.mainApp`) — the installed `/Applications` copy is the
+everyday way to run it from now on.
 
 ## What exists
 
@@ -25,10 +30,12 @@ item frame. **Brightness submenu verified end-to-end on device** (ten steps,
 
 ## Next steps (in order)
 
-1. Operator uses the running app for a few days: judge perceived blink quality,
-   off-state visibility on a light menu bar, and the menu's B/s readout.
-2. If judged good: packaging work if wanted (notarized .app / launch agent for
-   auto-start were floated pre-0.2) — ask the operator before scaffolding that.
+1. Operator uses the *installed* app (from `/Applications`) for a few days:
+   judge perceived blink quality, off-state visibility on a light menu bar,
+   and the menu's B/s readout.
+2. If rejected by Gatekeeper on any future install (e.g. after a reclone on a
+   new Mac) or a Developer ID shows up: notarize the bundle — the packaging
+   script is the only place that would change (see KB.md §Packaging).
 3. If the menu bar ever throttles swap rendering under load, evaluate a custom
    `NSStatusItem` view with the operator — never silently lengthen the tick.
 

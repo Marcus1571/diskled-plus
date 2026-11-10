@@ -18,6 +18,11 @@ cd ~/src/diskled-plus && swift build -c release
 .build/release/DiskLEDPlus
 ```
 
+For everyday use, package it as a real `.app` with
+[scripts/make-app.sh](scripts/make-app.sh) and copy it to `/Applications`
+(see [KB.md §Packaging](KB.md#packaging-app-bundle)) — then flip **Start at
+Login** in the menu bar menu and it survives reboots on its own.
+
 ## What it is NOT
 
 It is not iStat Menus, MenuMeters, or Stats — those are excellent meters, but they
