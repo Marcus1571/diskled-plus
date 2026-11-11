@@ -29,8 +29,9 @@ moved data, near-dark when a tick had none:
 
 Clicking it opens a menu with the live B/s readout taken over a display-only
 ~1 s window, **Settings…** (choose one of six indicator layouts — bars,
-dots, stacked "dl+" + dots, "R/W" letters, split plus, labeled bars — plus
-the brightness), **Start at Login**, and a standard About panel:
+dots, stacked "SSD" + dots, "R/W" letters, "SSD" with blinking lines, or
+labeled bars — plus the brightness), **Start at Login**, and a standard
+About panel:
 
 | Menu | Brightness |
 |------|------------|

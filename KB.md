@@ -76,15 +76,18 @@ interactive shell use the absolute path `/usr/bin/log`.
 - **Layouts** (§Settings), six cases selectable in the window: `bars` — two
   vertical rectangles separated by a 1 pt seam (original DiskLED look);
   `dots` — two circles side by side (iStat-Menus-style); `dotsLabeled` —
-  white "dl+" stacked above the dots; `letters` — "RW" as the LEDs;
-  `monogram` — "dl" + activity "+" (green/red/split/idle); `barsLabeled` —
-  white "dl+" left of the bars. All keep left/first=reads-green,
-  second=writes-red and the same per-tick on/off rule; off state = same
-  shapes in near-dark tint. White "dl+" labels stay lit at all times (so the
-  layout remains findable while LEDs are off); idle letters/plus use the
-  near-dark channel colors / a dim gray.
-- Image sizes: 16×16 pt for `bars`/`dots`/`letters`/`monogram`; 14×16 for
-  `dotsLabeled`; 30×16 for `barsLabeled`. The status item runs at
+  white "SSD" stacked above the dots; `letters` — "RW" as the LEDs;
+  `monogram` — white "SSD" with an activity line above (reads-green) and
+  below (writes-red) the text; `barsLabeled` — white "SSD" left of the
+  bars. All keep left/first=reads-green, second=writes-red and the same
+  per-tick on/off rule; off state = same shapes in near-dark tint. White
+  "SSD" labels stay lit at all times (so the layout remains findable while
+  LEDs are off); idle letters/lines use the near-dark channel colors.
+- Image sizes: 16×16 pt for `bars`/`dots`/`letters`; stacked/labeled layouts
+  are sized from the measured "SSD" text (9 pt semibold) — `dotsLabeled` and
+  `monogram` at the full 17 pt bar height (text tight at the top plane, LEDs
+  at the bottom, iStat two-line density, verified against the real bar
+  2026-11-11), `barsLabeled` (~34×16, centered row). The status item runs at
   `variableLength` and is re-measured on layout change.
 - Colors: readLit green sRGB(0.05, 1.00, 0.25); writeLit red sRGB(1.00, 0.15, 0.15);
   off tints near-dark green/red respectively.

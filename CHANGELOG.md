@@ -1,5 +1,33 @@
 # CHANGELOG.md
 
+## [0.7.1] — 2026-11-11
+
+### Changed
+- **Labels renamed "dl+" → "SSD"** in all three labeled layouts
+  (`dotsLabeled`, `monogram`, `barsLabeled`) — the operator's choice; "SSD"
+  describes what the LED actually reports.
+- **Vertical space fully used in the stacked/labeled layouts** (operator's
+  critique vs the iStat BAT/100% element): stacked layouts now draw at the
+  full 17 pt bar height with no internal margin — "SSD" (~9 pt semibold,
+  iStat's two-line density) tight at the top plane, the LEDs at the very
+  bottom plane. Applies to `dotsLabeled` and `monogram`; `barsLabeled`
+  keeps a centered 16 pt row.
+- **`monogram` redesigned per operator**: "SSD" in white with an activity
+  line above and below the text (lines span the text width, over/underline
+  style) — top line green on reads, bottom line red on writes, both
+  near-dark when idle. Replaces the "dl" + diagonally split "+" glyph.
+- Image sizes now derived from the measured "SSD" label text:
+  `dotsLabeled`/`monogram` 17 pt tall (~20 pt wide), `barsLabeled`
+  (~34×16). Enum raw values unchanged — persisted `ledLayout` choices keep
+  working with no migration.
+- `scripts/make-mockups.swift` — updated to the renamed/redesigned variants.
+
+### Verified on device (2026-11-11)
+- Real menu-bar captures of all changed layouts next to the iStat elements
+  (`screenshots/realbar-*.png`): "SSD" sits on the same plane as iStat's
+  "BAT", the LEDs sit down at the "100%" plane; no excessive top/bottom
+  margins remain.
+
 ## [0.7.0] — 2026-11-11
 
 ### Added

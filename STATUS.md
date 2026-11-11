@@ -16,9 +16,11 @@ to run it.
 
 **Open design decision: RESOLVED (2026-11-11).** The operator picked the
 status-bar layout set from the design sheet: the original bars stay default,
-plus five new layouts — two dots, "dl+" stacked above the dots, "RW" letters
-as LEDs, the "dl+" split plus, and bars with a "dl+" label — all selectable
-and persisted in Settings (shipped as v0.7.0).
+plus five new layouts — two dots, "SSD" stacked above the dots, "RW" letters
+as LEDs, "SSD" with a blinking line above and below the text, and bars with
+an "SSD" label — all selectable and persisted in Settings (shipped as
+v0.7.0; label rename dl+→SSD, full bar-height stacked rendering, and the
+lines redesign shipped as v0.7.1, verified with real menu-bar captures).
 
 ## What exists
 
