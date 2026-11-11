@@ -17,21 +17,47 @@ enum LEDState: Hashable {
     }
 }
 
-/// Status-bar graphic layouts. All keep the same rule: left = reads (green),
-/// right = writes (red), lit or dark per tick, never smoothed.
+/// Status-bar graphic layouts. All keep the same rule: left/first channel =
+/// reads (green), second = writes (red), lit or dark per tick, never smoothed.
 ///
-/// - `bars`: the original — one 16×16 pt square split into two vertical
-///   rectangles separated by a 1 pt seam (DiskLED's look, carried over).
-/// - `dots`: two circles side by side (iStat-Menus style), lower profile and
-///   friendlier to a crowded menu bar.
+/// - `bars`: the original — one square split into two vertical rectangles
+///   separated by a 1 pt seam (DiskLED's look, carried over).
+/// - `dots`: two circles side by side (iStat-Menus style), lower profile.
+/// - `dotsLabeled`: a small white "dl+" above the two dots, stacked so the
+///   layout costs almost no extra horizontal space.
+/// - `letters`: "RW" where the letters themselves are the LEDs.
+/// - `monogram`: "dl" in white plus an activity "+" (green on reads, red on
+///   writes, split diagonally when both).
+/// - `barsLabeled`: white "dl+" label to the left of the bars.
 enum LEDLayout: String, CaseIterable {
     case bars
     case dots
+    case dotsLabeled
+    case letters
+    case monogram
+    case barsLabeled
 
-    var label: String {
+    var title: String {
         switch self {
-        case .bars: return "Bars (two rectangles)"
-        case .dots: return "Dots (two circles)"
+        case .bars:        return "Bars (two rectangles)"
+        case .dots:        return "Dots (two circles)"
+        case .dotsLabeled: return "Dots with \"dl+\" stacked"
+        case .letters:     return "\"R/W\" letters as LEDs"
+        case .monogram:    return "\"dl+\" split plus"
+        case .barsLabeled: return "Bars with \"dl+\" label"
+        }
+    }
+
+    /// Status-item image size per layout. Labeled layouts need extra width;
+    /// the status item runs at variable length so each layout gets its fit.
+    var iconSize: NSSize {
+        switch self {
+        case .bars, .dots, .letters, .monogram:
+            return NSSize(width: 16, height: 16)
+        case .dotsLabeled:
+            return NSSize(width: 14, height: 16)
+        case .barsLabeled:
+            return NSSize(width: 30, height: 16)
         }
     }
 
@@ -46,7 +72,6 @@ enum LEDLayout: String, CaseIterable {
 final class LEDIconRenderer {
     static let shared = LEDIconRenderer()
 
-    private let side: CGFloat = 16          // point size of the icon
     private let gap: CGFloat = 1            // seam between the two channels
 
     // Lit colors at full strength; the brightness percentage controls them via alpha,
@@ -57,39 +82,163 @@ final class LEDIconRenderer {
     // by the brightness setting — its role is "the light is off", not "light at zero".
     private let readOff  = NSColor(srgbRed: 0.04, green: 0.16, blue: 0.07, alpha: 1)
     private let writeOff = NSColor(srgbRed: 0.18, green: 0.04, blue: 0.04, alpha: 1)
+    // White app labels ("dl+") stay lit at all times so a labeled layout remains
+    // findable while the LEDs are off — same role as any other menu-bar text.
+    private let labelColor = NSColor.white
+    // Idle color for the monogram's "+" (no LED color when nothing is active).
+    private let idleColor = NSColor(calibratedWhite: 0.28, alpha: 1)
 
-    // One image per (layout, state, brightness) triple; worst case 2 layouts x
-    // 4 states x 10 brightness steps, all tiny. Brightness is clamped to 10–100.
+    // One image per (layout, state, brightness) triple, all tiny. Brightness is
+    // clamped to 10–100 by the callers.
     private var cache: [LEDLayout: [LEDState: [Int: NSImage]]] = [:]
 
     func icon(for state: LEDState, brightnessPercent: Int, layout: LEDLayout) -> NSImage {
         let percent = min(max(brightnessPercent, 10), 100)
         if let cached = cache[layout]?[state]?[percent] { return cached }
-        let readsActive = state == .readsOnly || state == .both
-        let writesActive = state == .writesOnly || state == .both
-        let readColor = readsActive ? readLitFull.withAlphaComponent(Double(percent) / 100) : readOff
-        let writeColor = writesActive ? writeLitFull.withAlphaComponent(Double(percent) / 100) : writeOff
-
-        let image = NSImage(size: NSSize(width: side, height: side), flipped: false) { [self] rect in
-            switch layout {
-            case .bars:
-                let half = (rect.width - gap) / 2
-                readColor.setFill()
-                NSRect(x: rect.minX, y: rect.minY, width: half, height: rect.height).fill()
-                writeColor.setFill()
-                NSRect(x: rect.minX + half + gap, y: rect.minY, width: half, height: rect.height).fill()
-            case .dots:
-                let diameter = (rect.width - gap) / 2
-                let y = (rect.height - diameter) / 2
-                readColor.setFill()
-                NSBezierPath(ovalIn: NSRect(x: rect.minX, y: y, width: diameter, height: diameter)).fill()
-                writeColor.setFill()
-                NSBezierPath(ovalIn: NSRect(x: rect.minX + diameter + gap, y: y, width: diameter, height: diameter)).fill()
-            }
+        let size = layout.iconSize
+        let image = NSImage(size: size, flipped: false) { [self] rect in
+            draw(layout: layout, state: state, percent: percent, in: rect)
             return true
         }
         image.isTemplate = false // preserves the LED colors; macOS must not re-tint it
         cache[layout, default: [:]][state, default: [:]][percent] = image
         return image
+    }
+
+    // MARK: - Per-layout drawing (origin bottom-left, not flipped)
+
+    private func draw(layout: LEDLayout, state: LEDState, percent: Int, in rect: NSRect) {
+        let readsActive = state == .readsOnly || state == .both
+        let writesActive = state == .writesOnly || state == .both
+        let readLit = readLitFull.withAlphaComponent(Double(percent) / 100)
+        let writeLit = writeLitFull.withAlphaComponent(Double(percent) / 100)
+
+        switch layout {
+        case .bars:
+            let half = (rect.width - gap) / 2
+            (readsActive ? readLit : readOff).setFill()
+            NSRect(x: rect.minX, y: rect.minY, width: half, height: rect.height).fill()
+            (writesActive ? writeLit : writeOff).setFill()
+            NSRect(x: rect.minX + half + gap, y: rect.minY, width: half, height: rect.height).fill()
+
+        case .dots:
+            let d = (rect.width - gap) / 2
+            let y = (rect.height - d) / 2
+            (readsActive ? readLit : readOff).setFill()
+            NSBezierPath(ovalIn: NSRect(x: rect.minX, y: y, width: d, height: d)).fill()
+            (writesActive ? writeLit : writeOff).setFill()
+            NSBezierPath(ovalIn: NSRect(x: rect.minX + d + gap, y: y, width: d, height: d)).fill()
+
+        case .dotsLabeled:
+            // White "dl+" stacked above the dot pair: near-zero horizontal cost.
+            let font = NSFont.systemFont(ofSize: 8, weight: .semibold)
+            let text = "dl+" as NSString
+            let textSize = text.size(withAttributes: textAttributes(font))
+            text.draw(at: NSPoint(x: rect.midX - textSize.width / 2,
+                                  y: rect.height - textSize.height - 0.5),
+                      withAttributes: textAttributes(font))
+            let d: CGFloat = 4.5
+            let total = d * 2 + gap
+            let x = rect.midX - total / 2
+            (readsActive ? readLit : readOff).setFill()
+            NSBezierPath(ovalIn: NSRect(x: x, y: 0.5, width: d, height: d)).fill()
+            (writesActive ? writeLit : writeOff).setFill()
+            NSBezierPath(ovalIn: NSRect(x: x + d + gap, y: 0.5, width: d, height: d)).fill()
+
+        case .letters:
+            // The letters are the LEDs: "R" is the reads channel, "W" the writes one.
+            let font = NSFont.systemFont(ofSize: 11, weight: .semibold)
+            let r = "R" as NSString
+            let w = "W" as NSString
+            let attrs = textAttributes(font)
+            let rWidth = r.size(withAttributes: attrs).width
+            let total = rWidth + w.size(withAttributes: attrs).width
+            let x = rect.midX - total / 2
+            let y = rect.midY - r.size(withAttributes: attrs).height / 2
+            r.draw(at: NSPoint(x: x, y: y),
+                   withAttributes: [.font: font,
+                                    .foregroundColor: readsActive ? readLit : readOff])
+            w.draw(at: NSPoint(x: x + rWidth, y: y),
+                   withAttributes: [.font: font,
+                                    .foregroundColor: writesActive ? writeLit : writeOff])
+
+        case .monogram:
+            // "dl" is the app mark (always white); "+" is the activity glyph —
+            // green on reads, red on writes, split diagonally when both, dim when idle.
+            let font = NSFont.systemFont(ofSize: 11, weight: .semibold)
+            let dl = "dl" as NSString
+            let plus = "+" as NSString
+            let attrs = textAttributes(font)
+            let dlWidth = dl.size(withAttributes: attrs).width
+            let total = dlWidth + plus.size(withAttributes: attrs).width
+            let x = rect.midX - total / 2
+            let dlSize = dl.size(withAttributes: attrs)
+            dl.draw(at: NSPoint(x: x, y: rect.midY - dlSize.height / 2),
+                    withAttributes: [.font: font, .foregroundColor: labelColor])
+            let plusRect = CGRect(x: x + dlWidth,
+                                  y: rect.midY - plus.size(withAttributes: attrs).height / 2,
+                                  width: plus.size(withAttributes: attrs).width,
+                                  height: plus.size(withAttributes: attrs).height)
+            drawSplitPlus(plus: plus, font: font, rect: plusRect,
+                          readsActive: readsActive, writesActive: writesActive)
+
+        case .barsLabeled:
+            // White "dl+" left, the two rectangles right (compressed to fit).
+            let font = NSFont.systemFont(ofSize: 9, weight: .semibold)
+            let text = "dl+" as NSString
+            let attrs = textAttributes(font)
+            let textSize = text.size(withAttributes: attrs)
+            let square: CGFloat = 14
+            let labelGap: CGFloat = 3
+            let total = textSize.width + labelGap + square
+            let x = rect.midX - total / 2
+            text.draw(at: NSPoint(x: x, y: rect.midY - textSize.height / 2),
+                      withAttributes: attrs)
+            let sx = x + textSize.width + labelGap
+            let sy = rect.midY - square / 2
+            let half = (square - gap) / 2
+            (readsActive ? readLit : readOff).setFill()
+            NSRect(x: sx, y: sy, width: half, height: square).fill()
+            (writesActive ? writeLit : writeOff).setFill()
+            NSRect(x: sx + half + gap, y: sy, width: half, height: square).fill()
+        }
+    }
+
+    /// The monogram's "+": one glyph colored by activity, split top-left green /
+    /// bottom-right red when both channels are live.
+    private func drawSplitPlus(plus: NSString, font: NSFont, rect: CGRect,
+                               readsActive: Bool, writesActive: Bool) {
+        func drawColored(_ color: NSColor, clip: NSBezierPath? = nil) {
+            if let clip {
+                NSGraphicsContext.current?.saveGraphicsState()
+                clip.addClip()
+                plus.draw(at: rect.origin, withAttributes: [.font: font, .foregroundColor: color])
+                NSGraphicsContext.current?.restoreGraphicsState()
+            } else {
+                plus.draw(at: rect.origin, withAttributes: [.font: font, .foregroundColor: color])
+            }
+        }
+        if readsActive && writesActive {
+            // Top-left half green, bottom-right half red — both halves are the
+            // same glyph, clipped along the diagonal.
+            let topLeft = NSBezierPath()
+            topLeft.move(to: NSPoint(x: rect.minX, y: rect.minY))
+            topLeft.line(to: NSPoint(x: rect.minX, y: rect.maxY))
+            topLeft.line(to: NSPoint(x: rect.maxX, y: rect.maxY))
+            topLeft.close()
+            drawColored(readLitFull, clip: topLeft)
+            let bottomRight = NSBezierPath()
+            bottomRight.move(to: NSPoint(x: rect.minX, y: rect.minY))
+            bottomRight.line(to: NSPoint(x: rect.maxX, y: rect.minY))
+            bottomRight.line(to: NSPoint(x: rect.maxX, y: rect.maxY))
+            bottomRight.close()
+            drawColored(writeLitFull, clip: bottomRight)
+        } else {
+            drawColored(readsActive ? readLitFull : (writesActive ? writeLitFull : idleColor))
+        }
+    }
+
+    private func textAttributes(_ font: NSFont) -> [NSAttributedString.Key: Any] {
+        [.font: font, .foregroundColor: labelColor]
     }
 }

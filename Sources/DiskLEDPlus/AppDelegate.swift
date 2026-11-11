@@ -20,7 +20,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         static let legacyDefaultsSuite = "DiskLEDPlus"
     }
 
-    private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+    private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private let source = DiskActivitySource()
     private let renderer: LEDIconRenderer = .shared
     private var timer: Timer?
@@ -180,6 +180,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func applyLayout(_ newLayout: LEDLayout) {
         layout = newLayout
+        statusItem.length = NSStatusItem.variableLength // re-measure for the new image size
         render(lastRenderedState ?? .off)
         log.info("LED layout set to \(newLayout.rawValue, privacy: .public) (persisted)")
     }
