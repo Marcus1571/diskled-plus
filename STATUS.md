@@ -18,9 +18,10 @@ to run it.
 status-bar layout set from the design sheet: the original bars stay default,
 plus five new layouts — two dots, "SSD" stacked above the dots, "RW" letters
 as LEDs, "SSD" with a blinking line above and below the text, and bars with
-an "SSD" label — all selectable and persisted in Settings (shipped as
-v0.7.0; label rename dl+→SSD, full bar-height stacked rendering, and the
-lines redesign shipped as v0.7.1, verified with real menu-bar captures).
+an "SSD" label — all selectable and persisted in Settings v0.7.0/resolved design; v0.7.1 renamed labels to "SSD"; v0.7.2 tuned the
+stacked layouts to the full bar height after real-bar comparison with the
+neighboring iStat elements (10 pt regular label, full-size dots, lines at
+the extreme planes).
 
 ## What exists
 

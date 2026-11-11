@@ -1,5 +1,28 @@
 # CHANGELOG.md
 
+## [0.7.2] — 2026-11-11
+
+### Changed
+- **Stacked layouts use the full menu-bar height (20 pt)** — operator
+  feedback from real-bar comparisons vs the neighboring iStat BAT/100%
+  element: the label now sits on the same plane as "BAT" and the LEDs reach
+  the "100%" plane.
+  - Label font is **10 pt regular** (thinner, matching the iStat elements'
+    weight) instead of 9 pt semibold.
+  - `dotsLabeled`: dots are now the **same size as the standalone dots
+    layout** (7.5 pt) at the very bottom — no more shrunken 5 pt dots.
+  - `monogram`: the red (writes) line now sits at the very bottom of the
+    bar height; the green (reads) line stays at the top.
+- Image sizes derived from the measured 10 pt "SSD" label:
+  `dotsLabeled`/`monogram` 20 pt tall (~21 pt wide); `barsLabeled` unchanged
+  (centered 16 pt row — operator raised no objection there). Enum raw
+  values unchanged, persisted choices keep working.
+
+### Verified on device (2026-11-11)
+- Real menu-bar captures of both changed layouts next to the iStat elements
+  (`screenshots/realbar2-*.png`): "SSD" plane and weight match "BAT"; dots
+  match the standalone dots mode; red line at the lowest plane.
+
 ## [0.7.1] — 2026-11-11
 
 ### Changed

@@ -84,10 +84,10 @@ interactive shell use the absolute path `/usr/bin/log`.
   "SSD" labels stay lit at all times (so the layout remains findable while
   LEDs are off); idle letters/lines use the near-dark channel colors.
 - Image sizes: 16×16 pt for `bars`/`dots`/`letters`; stacked/labeled layouts
-  are sized from the measured "SSD" text (9 pt semibold) — `dotsLabeled` and
-  `monogram` at the full 17 pt bar height (text tight at the top plane, LEDs
-  at the bottom, iStat two-line density, verified against the real bar
-  2026-11-11), `barsLabeled` (~34×16, centered row). The status item runs at
+  are sized from the measured "SSD" text (10 pt regular) — `dotsLabeled` and
+  `monogram` at 20 pt of the bar height (text on the "BAT" plane, LEDs on
+  the "100%" plane, dots full 7.5 pt size, verified against the real bar
+  2026-11-11), `barsLabeled` (centered 16 pt row). The status item runs at
   `variableLength` and is re-measured on layout change.
 - Colors: readLit green sRGB(0.05, 1.00, 0.25); writeLit red sRGB(1.00, 0.15, 0.15);
   off tints near-dark green/red respectively.
