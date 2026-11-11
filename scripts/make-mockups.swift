@@ -83,60 +83,40 @@ func letters(_ bar: NSRect, text: String, firstColor: NSColor, secondColor: NSCo
     }
 }
 
-// White "dl+" stacked above the dot pair — the shipped .dotsLabeled layout.
+// White "SSD" stacked above the dot pair — the shipped .dotsLabeled layout.
 func stackedDots(_ bar: NSRect) {
-    let font = NSFont.systemFont(ofSize: 8, weight: .semibold)
-    let text = "dl+"
+    let font = NSFont.systemFont(ofSize: 9, weight: .semibold)
+    let text = "SSD"
     let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: white]
     let size = (text as NSString).size(withAttributes: attrs)
-    let iconRect = NSRect(x: bar.midX - 7, y: bar.midY - 8, width: 14, height: 16)
+    let iconRect = NSRect(x: bar.midX - 10, y: bar.midY - 9.5, width: 20, height: 17)
     (text as NSString).draw(
-        at: NSPoint(x: iconRect.midX - size.width / 2, y: iconRect.maxY - size.height - 0.5),
+        at: NSPoint(x: iconRect.midX - size.width / 2, y: iconRect.maxY - size.height),
         withAttributes: attrs)
-    let d: CGFloat = 4.5, gap: CGFloat = 1
+    let d: CGFloat = 5, gap: CGFloat = 1
     let total = d * 2 + gap
     let x = iconRect.midX - total / 2
-    dot(NSRect(x: x, y: iconRect.minY + 0.5, width: d, height: d), color: readLit)
-    dot(NSRect(x: x + d + gap, y: iconRect.minY + 0.5, width: d, height: d), color: writeLit)
+    dot(NSRect(x: x, y: iconRect.minY, width: d, height: d), color: readLit)
+    dot(NSRect(x: x + d + gap, y: iconRect.minY, width: d, height: d), color: writeLit)
 }
 
-// "dl" white + split plus (the shipped .monogram layout).
-func monogramSplit(_ bar: NSRect) {
-    let font = NSFont.systemFont(ofSize: 11.5, weight: .medium)
-    let dl = "dl", plus = "+"
-    let gap: CGFloat = 0
-    let total = textWidth(dl, font: font) + gap + textWidth(plus, font: font)
-    let x = bar.midX - total / 2
-    label(dl, in: bar, atX: x, font: font)
-    // Draw the plus twice with clipping to split it diagonally.
-    let px = x + textWidth(dl, font: font) + gap
-    let py = bar.midY - textWidth(plus, font: font) / 2 // approximate vertical centering
-    let plusAttrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: white]
-    let plusSize = (plus as NSString).size(withAttributes: plusAttrs)
-    let plusRect = NSRect(x: px, y: bar.midY - plusSize.height / 2,
-                          width: plusSize.width, height: plusSize.height)
-
-    NSGraphicsContext.current?.saveGraphicsState()
-    let split = NSBezierPath()
-    split.move(to: NSPoint(x: plusRect.minX, y: plusRect.minY))
-    split.line(to: NSPoint(x: plusRect.minX, y: plusRect.maxY))
-    split.line(to: NSPoint(x: plusRect.maxX, y: plusRect.maxY))
-    split.close()
-    split.addClip()
+// "SSD" with an activity line above (reads) and below (writes) — the shipped
+// .monogram layout.
+func monogramLines(_ bar: NSRect) {
+    let font = NSFont.systemFont(ofSize: 9, weight: .semibold)
+    let text = "SSD"
+    let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: white]
+    let size = (text as NSString).size(withAttributes: attrs)
+    let iconRect = NSRect(x: bar.midX - 10, y: bar.midY - 9.5, width: 20, height: 17)
+    let lineWidth = ceil(size.width), thickness: CGFloat = 1.5
+    let x = iconRect.midX - lineWidth / 2
     readLit.setFill()
-    plusRect.fill()
-    NSGraphicsContext.current?.restoreGraphicsState()
-
-    NSGraphicsContext.current?.saveGraphicsState()
-    let split2 = NSBezierPath()
-    split2.move(to: NSPoint(x: plusRect.minX, y: plusRect.minY))
-    split2.line(to: NSPoint(x: plusRect.maxX, y: plusRect.minY))
-    split2.line(to: NSPoint(x: plusRect.maxX, y: plusRect.maxY))
-    split2.close()
-    split2.addClip()
+    NSRect(x: x, y: iconRect.maxY - thickness, width: lineWidth, height: thickness).fill()
+    (text as NSString).draw(
+        at: NSPoint(x: iconRect.midX - size.width / 2, y: iconRect.midY - size.height / 2),
+        withAttributes: attrs)
     writeLit.setFill()
-    plusRect.fill()
-    NSGraphicsContext.current?.restoreGraphicsState()
+    NSRect(x: x, y: iconRect.minY, width: lineWidth, height: thickness).fill()
 }
 
 // The current bars design plus a white label.
@@ -162,11 +142,11 @@ func ioLetters(_ bar: NSRect) {
 let variants: [Variant] = [
     ("Bars", "the original, default", { bar in labeledBars(bar, text: "") }),
     ("Dots", "iStat-style", { bar in dots(bar) }),
-    ("Dots + \"dl+\" stacked", "label above the dots", { bar in stackedDots(bar) }),
+    ("Dots + \"SSD\" stacked", "label above the dots", { bar in stackedDots(bar) }),
     ("\"R/W\" letters", "the letters ARE the LEDs",
      { bar in letters(bar, text: "RW", firstColor: readLit, secondColor: writeLit) }),
-    ("\"dl+\" split plus", "+ is half green / half red", { bar in monogramSplit(bar) }),
-    ("Bars + \"dl+\"", "label to the left", { bar in labeledBars(bar, text: "dl+") }),
+    ("\"SSD\" blinking lines", "top line reads, bottom writes", { bar in monogramLines(bar) }),
+    ("Bars + \"SSD\"", "label to the left", { bar in labeledBars(bar, text: "SSD") }),
 ]
 
 // MARK: - Sheet layout: 3 columns x 2 rows

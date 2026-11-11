@@ -23,12 +23,13 @@ enum LEDState: Hashable {
 /// - `bars`: the original — one square split into two vertical rectangles
 ///   separated by a 1 pt seam (DiskLED's look, carried over).
 /// - `dots`: two circles side by side (iStat-Menus style), lower profile.
-/// - `dotsLabeled`: a small white "dl+" above the two dots, stacked so the
-///   layout costs almost no extra horizontal space.
+/// - `dotsLabeled`: a white "SSD" above the two dots, stacked tight against
+///   the menu-bar height (text at the top plane, dots at the bottom, like
+///   iStat's two-line elements).
 /// - `letters`: "RW" where the letters themselves are the LEDs.
-/// - `monogram`: "dl" in white plus an activity "+" (green on reads, red on
-///   writes, split diagonally when both).
-/// - `barsLabeled`: white "dl+" label to the left of the bars.
+/// - `monogram`: "SSD" in white with an activity line above and below —
+///   top line green (reads), bottom line red (writes).
+/// - `barsLabeled`: white "SSD" label to the left of the bars.
 enum LEDLayout: String, CaseIterable {
     case bars
     case dots
@@ -41,23 +42,36 @@ enum LEDLayout: String, CaseIterable {
         switch self {
         case .bars:        return "Bars (two rectangles)"
         case .dots:        return "Dots (two circles)"
-        case .dotsLabeled: return "Dots with \"dl+\" stacked"
+        case .dotsLabeled: return "Dots with \"SSD\" stacked"
         case .letters:     return "\"R/W\" letters as LEDs"
-        case .monogram:    return "\"dl+\" split plus"
-        case .barsLabeled: return "Bars with \"dl+\" label"
+        case .monogram:    return "\"SSD\" with blinking lines"
+        case .barsLabeled: return "Bars with \"SSD\" label"
         }
     }
 
-    /// Status-item image size per layout. Labeled layouts need extra width;
-    /// the status item runs at variable length so each layout gets its fit.
+    /// Label font and text used by the labeled layouts ("SSD", iStat-style
+    /// two-line density: ~9 pt semibold, tight against the bar height).
+    static let labelFont = NSFont.systemFont(ofSize: 9, weight: .semibold)
+    static let labelText = "SSD"
+
+    static func labelWidth(_ font: NSFont) -> CGFloat {
+        ceil((labelText as NSString).size(withAttributes: [.font: font]).width)
+    }
+
+    /// Status-item image size per layout. Labeled layouts are sized from the
+    /// measured label text; the status item runs at variable length so each
+    /// layout gets its fit. Stacked layouts use the full bar height (17 pt)
+    /// so no vertical space is wasted.
     var iconSize: NSSize {
         switch self {
-        case .bars, .dots, .letters, .monogram:
+        case .bars, .dots, .letters:
             return NSSize(width: 16, height: 16)
         case .dotsLabeled:
-            return NSSize(width: 14, height: 16)
+            return NSSize(width: Self.labelWidth(Self.labelFont) + 1, height: 17)
+        case .monogram:
+            return NSSize(width: Self.labelWidth(Self.labelFont) + 2, height: 17)
         case .barsLabeled:
-            return NSSize(width: 30, height: 16)
+            return NSSize(width: Self.labelWidth(Self.labelFont) + 3 + 14, height: 16)
         }
     }
 
@@ -82,11 +96,9 @@ final class LEDIconRenderer {
     // by the brightness setting — its role is "the light is off", not "light at zero".
     private let readOff  = NSColor(srgbRed: 0.04, green: 0.16, blue: 0.07, alpha: 1)
     private let writeOff = NSColor(srgbRed: 0.18, green: 0.04, blue: 0.04, alpha: 1)
-    // White app labels ("dl+") stay lit at all times so a labeled layout remains
+    // White "SSD" labels stay lit at all times so a labeled layout remains
     // findable while the LEDs are off — same role as any other menu-bar text.
     private let labelColor = NSColor.white
-    // Idle color for the monogram's "+" (no LED color when nothing is active).
-    private let idleColor = NSColor(calibratedWhite: 0.28, alpha: 1)
 
     // One image per (layout, state, brightness) triple, all tiny. Brightness is
     // clamped to 10–100 by the callers.
@@ -130,20 +142,22 @@ final class LEDIconRenderer {
             NSBezierPath(ovalIn: NSRect(x: rect.minX + d + gap, y: y, width: d, height: d)).fill()
 
         case .dotsLabeled:
-            // White "dl+" stacked above the dot pair: near-zero horizontal cost.
-            let font = NSFont.systemFont(ofSize: 8, weight: .semibold)
-            let text = "dl+" as NSString
-            let textSize = text.size(withAttributes: textAttributes(font))
+            // White "SSD" stacked above the dot pair: text tight to the top of
+            // the bar height, dots at the very bottom — no wasted margin.
+            let font = LEDLayout.labelFont
+            let text = LEDLayout.labelText as NSString
+            let attrs = textAttributes(font)
+            let textSize = text.size(withAttributes: attrs)
             text.draw(at: NSPoint(x: rect.midX - textSize.width / 2,
-                                  y: rect.height - textSize.height - 0.5),
-                      withAttributes: textAttributes(font))
-            let d: CGFloat = 4.5
+                                  y: rect.maxY - textSize.height),
+                      withAttributes: attrs)
+            let d: CGFloat = 5
             let total = d * 2 + gap
             let x = rect.midX - total / 2
             (readsActive ? readLit : readOff).setFill()
-            NSBezierPath(ovalIn: NSRect(x: x, y: 0.5, width: d, height: d)).fill()
+            NSBezierPath(ovalIn: NSRect(x: x, y: 0, width: d, height: d)).fill()
             (writesActive ? writeLit : writeOff).setFill()
-            NSBezierPath(ovalIn: NSRect(x: x + d + gap, y: 0.5, width: d, height: d)).fill()
+            NSBezierPath(ovalIn: NSRect(x: x + d + gap, y: 0, width: d, height: d)).fill()
 
         case .letters:
             // The letters are the LEDs: "R" is the reads channel, "W" the writes one.
@@ -163,29 +177,28 @@ final class LEDIconRenderer {
                                     .foregroundColor: writesActive ? writeLit : writeOff])
 
         case .monogram:
-            // "dl" is the app mark (always white); "+" is the activity glyph —
-            // green on reads, red on writes, split diagonally when both, dim when idle.
-            let font = NSFont.systemFont(ofSize: 11, weight: .semibold)
-            let dl = "dl" as NSString
-            let plus = "+" as NSString
+            // "SSD" in white (always lit) with an activity line above and below:
+            // top line green on reads, bottom line red on writes, both near-dark
+            // when idle. Lines span the text width, like over/underlines.
+            let font = LEDLayout.labelFont
+            let text = LEDLayout.labelText as NSString
             let attrs = textAttributes(font)
-            let dlWidth = dl.size(withAttributes: attrs).width
-            let total = dlWidth + plus.size(withAttributes: attrs).width
-            let x = rect.midX - total / 2
-            let dlSize = dl.size(withAttributes: attrs)
-            dl.draw(at: NSPoint(x: x, y: rect.midY - dlSize.height / 2),
-                    withAttributes: [.font: font, .foregroundColor: labelColor])
-            let plusRect = CGRect(x: x + dlWidth,
-                                  y: rect.midY - plus.size(withAttributes: attrs).height / 2,
-                                  width: plus.size(withAttributes: attrs).width,
-                                  height: plus.size(withAttributes: attrs).height)
-            drawSplitPlus(plus: plus, font: font, rect: plusRect,
-                          readsActive: readsActive, writesActive: writesActive)
+            let textSize = text.size(withAttributes: attrs)
+            let lineWidth: CGFloat = ceil(textSize.width)
+            let thickness: CGFloat = 1.5
+            let x = rect.midX - lineWidth / 2
+            (readsActive ? readLit : readOff).setFill()
+            NSRect(x: x, y: rect.maxY - thickness, width: lineWidth, height: thickness).fill()
+            text.draw(at: NSPoint(x: rect.midX - textSize.width / 2,
+                                  y: rect.midY - textSize.height / 2),
+                      withAttributes: attrs)
+            (writesActive ? writeLit : writeOff).setFill()
+            NSRect(x: x, y: rect.minY, width: lineWidth, height: thickness).fill()
 
         case .barsLabeled:
-            // White "dl+" left, the two rectangles right (compressed to fit).
-            let font = NSFont.systemFont(ofSize: 9, weight: .semibold)
-            let text = "dl+" as NSString
+            // White "SSD" left, the two rectangles right (compressed to fit).
+            let font = LEDLayout.labelFont
+            let text = LEDLayout.labelText as NSString
             let attrs = textAttributes(font)
             let textSize = text.size(withAttributes: attrs)
             let square: CGFloat = 14
@@ -201,40 +214,6 @@ final class LEDIconRenderer {
             NSRect(x: sx, y: sy, width: half, height: square).fill()
             (writesActive ? writeLit : writeOff).setFill()
             NSRect(x: sx + half + gap, y: sy, width: half, height: square).fill()
-        }
-    }
-
-    /// The monogram's "+": one glyph colored by activity, split top-left green /
-    /// bottom-right red when both channels are live.
-    private func drawSplitPlus(plus: NSString, font: NSFont, rect: CGRect,
-                               readsActive: Bool, writesActive: Bool) {
-        func drawColored(_ color: NSColor, clip: NSBezierPath? = nil) {
-            if let clip {
-                NSGraphicsContext.current?.saveGraphicsState()
-                clip.addClip()
-                plus.draw(at: rect.origin, withAttributes: [.font: font, .foregroundColor: color])
-                NSGraphicsContext.current?.restoreGraphicsState()
-            } else {
-                plus.draw(at: rect.origin, withAttributes: [.font: font, .foregroundColor: color])
-            }
-        }
-        if readsActive && writesActive {
-            // Top-left half green, bottom-right half red — both halves are the
-            // same glyph, clipped along the diagonal.
-            let topLeft = NSBezierPath()
-            topLeft.move(to: NSPoint(x: rect.minX, y: rect.minY))
-            topLeft.line(to: NSPoint(x: rect.minX, y: rect.maxY))
-            topLeft.line(to: NSPoint(x: rect.maxX, y: rect.maxY))
-            topLeft.close()
-            drawColored(readLitFull, clip: topLeft)
-            let bottomRight = NSBezierPath()
-            bottomRight.move(to: NSPoint(x: rect.minX, y: rect.minY))
-            bottomRight.line(to: NSPoint(x: rect.maxX, y: rect.minY))
-            bottomRight.line(to: NSPoint(x: rect.maxX, y: rect.maxY))
-            bottomRight.close()
-            drawColored(writeLitFull, clip: bottomRight)
-        } else {
-            drawColored(readsActive ? readLitFull : (writesActive ? writeLitFull : idleColor))
         }
     }
 
