@@ -23,13 +23,14 @@ enum LEDState: Hashable {
 /// - `bars`: the original — one square split into two vertical rectangles
 ///   separated by a 1 pt seam (DiskLED's look, carried over).
 /// - `dots`: two circles side by side (iStat-Menus style), lower profile.
-/// - `dotsLabeled`: a white "SSD" above the two dots, stacked tight against
-///   the menu-bar height (text at the top plane, dots at the bottom, like
-///   iStat's two-line elements).
+/// - `dotsLabeled`: the drive label ("SSD" or "HDD", detected — see
+///   SystemDriveType) above the two dots, stacked tight against the menu-bar
+///   height (text at the top plane, dots at the bottom, like iStat's
+///   two-line elements).
 /// - `letters`: "RW" where the letters themselves are the LEDs.
-/// - `monogram`: "SSD" in white with an activity line above and below —
-///   top line green (reads), bottom line red (writes).
-/// - `barsLabeled`: white "SSD" label to the left of the bars.
+/// - `monogram`: the drive label in white with an activity line above and
+///   below — top line green (reads), bottom line red (writes).
+/// - `barsLabeled`: the drive label to the left of the bars.
 enum LEDLayout: String, CaseIterable {
     case bars
     case dots
@@ -42,21 +43,22 @@ enum LEDLayout: String, CaseIterable {
         switch self {
         case .bars:        return "Bars (two rectangles)"
         case .dots:        return "Dots (two circles)"
-        case .dotsLabeled: return "Dots with \"SSD\" stacked"
+        case .dotsLabeled: return "Dots with drive label stacked"
         case .letters:     return "\"R/W\" letters as LEDs"
-        case .monogram:    return "\"SSD\" with blinking lines"
-        case .barsLabeled: return "Bars with \"SSD\" label"
+        case .monogram:    return "Drive label with blinking lines"
+        case .barsLabeled: return "Bars with drive label"
         }
     }
 
-    /// Label font and text used by the labeled layouts ("SSD", iStat-style:
-    /// ~10 pt regular — thinner than a semibold, matching the neighboring
-    /// iStat two-line elements).
+    /// Label font used by the labeled layouts (iStat-style: ~10 pt regular —
+    /// thinner than a semibold, matching the neighboring iStat two-line
+    /// elements). The label *text* is the detected system-drive medium type
+    /// ("SSD" / "HDD"), carried by LEDIconRenderer.labelText — see
+    /// SystemDriveType.
     static let labelFont = NSFont.systemFont(ofSize: 10, weight: .regular)
-    static let labelText = "SSD"
 
-    static func labelWidth(_ font: NSFont) -> CGFloat {
-        ceil((labelText as NSString).size(withAttributes: [.font: font]).width)
+    static func labelWidth(_ label: String, font: NSFont) -> CGFloat {
+        ceil((label as NSString).size(withAttributes: [.font: font]).width)
     }
 
     /// Status-item image size per layout. Labeled layouts are sized from the
@@ -64,16 +66,16 @@ enum LEDLayout: String, CaseIterable {
     /// layout gets its fit. Stacked layouts use 20 pt of the bar height —
     /// text tight at the top plane, LEDs at the very bottom plane (verified
     /// against iStat's BAT/100% element on the real bar).
-    var iconSize: NSSize {
+    func iconSize(label: String) -> NSSize {
         switch self {
         case .bars, .dots, .letters:
             return NSSize(width: 16, height: 16)
         case .dotsLabeled:
-            return NSSize(width: Self.labelWidth(Self.labelFont) + 1, height: 20)
+            return NSSize(width: Self.labelWidth(label, font: Self.labelFont) + 1, height: 20)
         case .monogram:
-            return NSSize(width: Self.labelWidth(Self.labelFont) + 2, height: 20)
+            return NSSize(width: Self.labelWidth(label, font: Self.labelFont) + 2, height: 20)
         case .barsLabeled:
-            return NSSize(width: Self.labelWidth(Self.labelFont) + 3 + 14, height: 16)
+            return NSSize(width: Self.labelWidth(label, font: Self.labelFont) + 3 + 14, height: 16)
         }
     }
 
@@ -98,9 +100,20 @@ final class LEDIconRenderer {
     // by the brightness setting — its role is "the light is off", not "light at zero".
     private let readOff  = NSColor(srgbRed: 0.04, green: 0.16, blue: 0.07, alpha: 1)
     private let writeOff = NSColor(srgbRed: 0.18, green: 0.04, blue: 0.04, alpha: 1)
-    // White "SSD" labels stay lit at all times so a labeled layout remains
+    // White labels stay lit at all times so a labeled layout remains
     // findable while the LEDs are off — same role as any other menu-bar text.
     private let labelColor = NSColor.white
+
+    /// Text drawn by the labeled layouts: the detected system-drive medium
+    /// type ("SSD" / "HDD"), set once at launch by the app delegate (see
+    /// SystemDriveTypeDetector). Defaults to "SSD" until detection runs.
+    private(set) var labelText = "SSD"
+
+    func setDriveLabel(_ newLabel: String) {
+        guard newLabel != labelText else { return }
+        labelText = newLabel
+        cache.removeAll() // every cached icon was drawn with the old text
+    }
 
     // One image per (layout, state, brightness) triple, all tiny. Brightness is
     // clamped to 10–100 by the callers.
@@ -109,9 +122,9 @@ final class LEDIconRenderer {
     func icon(for state: LEDState, brightnessPercent: Int, layout: LEDLayout) -> NSImage {
         let percent = min(max(brightnessPercent, 10), 100)
         if let cached = cache[layout]?[state]?[percent] { return cached }
-        let size = layout.iconSize
+        let size = layout.iconSize(label: labelText)
         let image = NSImage(size: size, flipped: false) { [self] rect in
-            draw(layout: layout, state: state, percent: percent, in: rect)
+            draw(layout: layout, state: state, percent: percent, label: labelText, in: rect)
             return true
         }
         image.isTemplate = false // preserves the LED colors; macOS must not re-tint it
@@ -121,7 +134,7 @@ final class LEDIconRenderer {
 
     // MARK: - Per-layout drawing (origin bottom-left, not flipped)
 
-    private func draw(layout: LEDLayout, state: LEDState, percent: Int, in rect: NSRect) {
+    private func draw(layout: LEDLayout, state: LEDState, percent: Int, label: String, in rect: NSRect) {
         let readsActive = state == .readsOnly || state == .both
         let writesActive = state == .writesOnly || state == .both
         let readLit = readLitFull.withAlphaComponent(Double(percent) / 100)
@@ -144,11 +157,12 @@ final class LEDIconRenderer {
             NSBezierPath(ovalIn: NSRect(x: rect.minX + d + gap, y: y, width: d, height: d)).fill()
 
         case .dotsLabeled:
-            // White "SSD" stacked above the dot pair: text tight to the top of
-            // the bar height, dots the same size as the standalone dots layout
-            // (7.5 pt) at the very bottom — no wasted margin, no shrunken LEDs.
+            // Drive label ("SSD"/"HDD") stacked above the dot pair: text tight
+            // to the top of the bar height, dots the same size as the
+            // standalone dots layout (7.5 pt) at the very bottom — no wasted
+            // margin, no shrunken LEDs.
             let font = LEDLayout.labelFont
-            let text = LEDLayout.labelText as NSString
+            let text = label as NSString
             let attrs = textAttributes(font)
             let textSize = text.size(withAttributes: attrs)
             text.draw(at: NSPoint(x: rect.midX - textSize.width / 2,
@@ -180,12 +194,13 @@ final class LEDIconRenderer {
                                     .foregroundColor: writesActive ? writeLit : writeOff])
 
         case .monogram:
-            // "SSD" in white (always lit) with an activity line above and below:
-            // top line green on reads, bottom line red on writes, both near-dark
-            // when idle. Lines span the text width (over/underline style); the
-            // red line sits at the very bottom of the bar height.
+            // Drive label ("SSD"/"HDD") in white (always lit) with an activity
+            // line above and below: top line green on reads, bottom line red
+            // on writes, both near-dark when idle. Lines span the text width
+            // (over/underline style); the red line sits at the very bottom of
+            // the bar height.
             let font = LEDLayout.labelFont
-            let text = LEDLayout.labelText as NSString
+            let text = label as NSString
             let attrs = textAttributes(font)
             let textSize = text.size(withAttributes: attrs)
             let lineWidth: CGFloat = ceil(textSize.width)
@@ -200,9 +215,10 @@ final class LEDIconRenderer {
             NSRect(x: x, y: rect.minY, width: lineWidth, height: thickness).fill()
 
         case .barsLabeled:
-            // White "SSD" left, the two rectangles right (compressed to fit).
+            // Drive label ("SSD"/"HDD") left, the two rectangles right
+            // (compressed to fit).
             let font = LEDLayout.labelFont
-            let text = LEDLayout.labelText as NSString
+            let text = label as NSString
             let attrs = textAttributes(font)
             let textSize = text.size(withAttributes: attrs)
             let square: CGFloat = 14

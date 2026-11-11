@@ -99,6 +99,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         UserDefaults.standard.register(defaults: [Constants.brightnessKey: Constants.defaultBrightnessPercent])
         brightnessPercent = AppDelegate.sharedBrightnessPercent
         layout = AppDelegate.sharedLayout
+        // The labeled layouts carry the system drive's medium type ("SSD"/"HDD").
+        // Detect once at launch — a system drive's medium type cannot change
+        // while the process runs. Details of the detection land in the unified
+        // log (subsystem com.diskledplus.disk, category drive).
+        let driveType = SystemDriveTypeDetector.detect()
+        renderer.setDriveLabel(driveType.label)
+        log.info("system drive medium type resolved, label=\(driveType.label, privacy: .public)")
         // One-shot enablement for scripted installs: --enable-login-item registers
         // the login item without needing a click through the menu first.
         if isBundled, CommandLine.arguments.contains("--enable-login-item") {

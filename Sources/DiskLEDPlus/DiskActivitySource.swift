@@ -50,9 +50,14 @@ final class DiskActivitySource {
             return .zero
         }
 
+        // Explicit release before fetching the next entry — a `defer` here would
+        // run at each iteration's end, i.e. after `service` has already been
+        // reassigned to the NEXT handle, releasing every driver entry before it
+        // is ever read (bug found 2026-11-12: only the first enumerated driver
+        // ever contributed stats, external drives never did, and every launch
+        // logged a spurious "Statistics missing" warning).
         var service = IOIteratorNext(iterator)
         while service != 0 {
-            defer { IOObjectRelease(service) }
             diskCount += 1
             if let dict = registryDictionary(service, key: "Statistics") {
                 readBytes += uintValue(dict, "Bytes (Read)")
@@ -60,6 +65,7 @@ final class DiskActivitySource {
                 readOps += uintValue(dict, "Operations (Read)")
                 writeOps += uintValue(dict, "Operations (Write)")
             }
+            IOObjectRelease(service)
             service = IOIteratorNext(iterator)
         }
 
