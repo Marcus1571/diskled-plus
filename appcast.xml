@@ -6,14 +6,14 @@
     <description>Most recent DiskLED-plus releases.</description>
     <language>en</language>
     <item>
-      <title>Version 0.6.0</title>
-      <pubDate>Wed, 11 Nov 2026 14:01:21 GMT</pubDate>
-      <sparkle:releaseNotesLink>https://github.com/Marcus1571/diskled-plus/releases/tag/v0.6.0</sparkle:releaseNotesLink>
-      <enclosure url="https://github.com/Marcus1571/diskled-plus/releases/download/v0.6.0/DiskLED-plus-0.6.0.dmg"
-                 sparkle:version="600"
-                 sparkle:shortVersionString="0.6.0"
-                 sparkle:edSignature="G4fNEXYcv1fjcRvTECrPYVGVkOsVpI/mqkwX+LVs7Zymv2+Rl7c+bouuJHFRk2Fp733jlroamNIsTpHtfKB4BA=="
-                 length="1703676"
+      <title>Version 0.7.0</title>
+      <pubDate>Wed, 11 Nov 2026 14:25:10 GMT</pubDate>
+      <sparkle:releaseNotesLink>https://github.com/Marcus1571/diskled-plus/releases/tag/v0.7.0</sparkle:releaseNotesLink>
+      <enclosure url="https://github.com/Marcus1571/diskled-plus/releases/download/v0.7.0/DiskLED-plus-0.7.0.dmg"
+                 sparkle:version="700"
+                 sparkle:shortVersionString="0.7.0"
+                 sparkle:edSignature="OPDp1QQLdFR/1tuDv9DDZHN3XXdyzv+JbBAYt1qC2p+Wa5X8rY6yMyGJdT4QTMrQo7cyMgVhY+pjN3lJyPY5Dw=="
+                 length="1385600"
                  type="application/octet-stream" />
       <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
     </item>
