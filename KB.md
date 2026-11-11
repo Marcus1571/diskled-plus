@@ -138,9 +138,18 @@ interactive shell use the absolute path `/usr/bin/log`.
 
 ## Updates (Sparkle)
 
-- Bundled app checks for updates **at startup** and **weekly** (Sparkle 2,
-  `SUScheduledCheckInterval = 604800`, `SUAutomaticallyUpdate = true` — updates
+- Bundled app checks for updates **weekly** (Sparkle 2,
+  `SUScheduledCheckInterval = 604800`; `SUAutomaticallyUpdate = true` — updates
   install without a confirmation dialog once that preference is granted).
+  The startup check honors the interval: it fires at launch **only when the
+  scheduled interval has elapsed** since the previous check (confirmed live
+  2026-11-11 — a same-day release was skipped silently at relaunch; the
+  check ran after `SULastCheckTime` in the app's defaults was back-dated,
+  or use the menu's Check for Updates… to force it immediately).
+  Also observed live 2026-11-11: the Autoupdate installer can sit idle
+  waiting for the running app to terminate before swapping the bundle —
+  quitting the app lets the install complete; the new version is then
+  launched by hand (or by the installer on its normal path).
   Feed: `Info.plist` `SUFeedURL` = raw.githubusercontent copy of this repo's
   `appcast.xml`; update first run shows Sparkle's standard one-time
   "Check automatically?" permission prompt.
