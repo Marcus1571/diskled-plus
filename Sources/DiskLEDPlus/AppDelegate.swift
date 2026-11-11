@@ -13,6 +13,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         static let tickInterval: TimeInterval = 0.030
         static let defaultBrightnessPercent = 60
         static let brightnessKey = "ledBrightnessPercent"
+        static let layoutKey = "ledLayout"
         // 0.3.x bare-binary launches stored preferences under the process-name
         // domain ("DiskLEDPlus"); the bundled app uses the bundle identifier
         // domain ("com.diskledplus.app"). Carried over on first bundled launch.
@@ -32,6 +33,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     // LED brightness in percent of the lit colors' full strength (10–100). The
     // operator set the default explicitly — never "bump it back up to be visible".
     private var brightnessPercent: Int = Constants.defaultBrightnessPercent
+    // Graphic layout of the status-bar indicator (bars or dots).
+    private var layout: LEDLayout = .bars
+
+    // Cross-object preference surface: the settings window and this app delegate
+    // both read/write through these static accessors, which persist immediately
+    // and hand the change back to the live app delegate for re-rendering.
+    static var sharedLayout: LEDLayout {
+        get { LEDLayout(stored: UserDefaults.standard.string(forKey: Constants.layoutKey) ?? "") }
+        set {
+            UserDefaults.standard.set(newValue.rawValue, forKey: Constants.layoutKey)
+            (NSApp.delegate as? AppDelegate)?.applyLayout(newValue)
+        }
+    }
+    static var sharedBrightnessPercent: Int {
+        get {
+            let stored = UserDefaults.standard.integer(forKey: Constants.brightnessKey)
+            return min(max(stored, 10), 100)
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: Constants.brightnessKey)
+            (NSApp.delegate as? AppDelegate)?.applyBrightness(newValue)
+        }
+    }
 
     // Menu items that mirror live rates (display only; the LED stays the primary output).
     private var readRateItem: NSMenuItem?
@@ -73,8 +97,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             log.info("migrated brightness preference from bare-binary defaults domain: \(migrated, privacy: .public)%")
         }
         UserDefaults.standard.register(defaults: [Constants.brightnessKey: Constants.defaultBrightnessPercent])
-        let stored = UserDefaults.standard.integer(forKey: Constants.brightnessKey)
-        brightnessPercent = min(max(stored, 10), 100)
+        brightnessPercent = AppDelegate.sharedBrightnessPercent
+        layout = AppDelegate.sharedLayout
         // One-shot enablement for scripted installs: --enable-login-item registers
         // the login item without needing a click through the menu first.
         if isBundled, CommandLine.arguments.contains("--enable-login-item") {
@@ -148,8 +172,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func render(_ state: LEDState) {
         lastRenderedState = state
-        statusItem.button?.image = renderer.icon(for: state, brightnessPercent: brightnessPercent)
+        statusItem.button?.image = renderer.icon(for: state, brightnessPercent: brightnessPercent, layout: layout)
         statusItem.button?.toolTip = "DiskLED-plus — green: reads, red: writes"
+    }
+
+    // MARK: - Preferences application (from Settings window or menu)
+
+    private func applyLayout(_ newLayout: LEDLayout) {
+        layout = newLayout
+        render(lastRenderedState ?? .off)
+        log.info("LED layout set to \(newLayout.rawValue, privacy: .public) (persisted)")
+    }
+
+    private func applyBrightness(_ percent: Int) {
+        let clamped = min(max(percent, 10), 100)
+        brightnessPercent = clamped
+        for item in brightnessMenuItem?.submenu?.items ?? [] {
+            item.state = item.tag == clamped ? .on : .off
+        }
+        render(lastRenderedState ?? .off)
+        log.info("LED brightness set to \(clamped)% (persisted)")
     }
 
     // MARK: - Menu
@@ -207,6 +249,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             }
         }
 
+        let settings = NSMenuItem(title: "Settings…",
+                                  action: #selector(showSettings),
+                                  keyEquivalent: ",")
+        settings.target = self
+        menu.addItem(settings)
+
         let about = NSMenuItem(title: "About DiskLED-plus",
                                action: #selector(showAbout),
                                keyEquivalent: "")
@@ -238,13 +286,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func setBrightness(_ sender: NSMenuItem) {
         let percent = sender.tag
         guard (10...100).contains(percent) else { return }
-        brightnessPercent = percent
-        UserDefaults.standard.set(percent, forKey: Constants.brightnessKey)
-        for item in brightnessMenuItem?.submenu?.items ?? [] {
-            item.state = item.tag == percent ? .on : .off
-        }
-        render(lastRenderedState ?? .off)
-        log.info("LED brightness set to \(percent)% (persisted)")
+        AppDelegate.sharedBrightnessPercent = percent
     }
 
     // MARK: - Start at Login
@@ -268,28 +310,59 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         log.info("start-at-login now enabled=\(self.isStartAtLoginEnabled, privacy: .public)")
     }
 
+    // MARK: - Settings window
+
+    @objc private func showSettings() {
+        let controller = SettingsWindowController.shared
+        controller.refresh()
+        controller.showWindow(self)
+        controller.window?.makeKeyAndOrderFront(self)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    // MARK: - About (standard macOS panel)
+
+    /// Standard macOS About panel: app icon, name, version, and a credits block
+    /// with the author, the license and the source repository.
     @objc private func showAbout() {
-        let version = (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String) ?? ""
-        let title = version.isEmpty ? "DiskLED-plus" : "DiskLED-plus \(version)"
-        let alert = NSAlert()
-        alert.messageText = title
-        alert.informativeText = """
-        Disk activity, shown the way hardware used to do it:
-        one LED, blinking for every single tick of I/O — 33 times per
-        second, nothing averaged, nothing rounded up, nothing smoothed away.
+        NSApp.orderFrontStandardAboutPanel(options: [
+            .applicationName: "DiskLED-plus",
+            .credits: Self.aboutCredits(),
+        ])
+        NSApp.activate(ignoringOtherApps: true)
+    }
 
-        🟩 left bar — reads
-        🟥 right bar — writes
-        ⬛ both dark — the disk is idle
+    private static func aboutCredits() -> NSAttributedString {
+        let text = NSMutableAttributedString()
+        let body = NSFont.systemFont(ofSize: 11)
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.lineSpacing = 2
+        paragraph.paragraphSpacing = 6
 
-        When a meter masks small reads with averages, it also hides
-        exactly the activity this app was built to make visible.
+        func append(_ string: String, font: NSFont = body, color: NSColor = .labelColor,
+                    link: URL? = nil) {
+            let attributed = NSMutableAttributedString(string: string)
+            var attributes: [NSAttributedString.Key: Any] = [
+                .font: font, .foregroundColor: color, .paragraphStyle: paragraph,
+            ]
+            if let link {
+                attributes[.link] = link
+                attributes[.underlineStyle] = NSUnderlineStyle.single.rawValue
+            }
+            attributed.setAttributes(attributes, range: NSRange(location: 0, length: attributed.length))
+            text.append(attributed)
+        }
 
-        Original Swift, MIT. Inspired by Helge Klein's DiskLED for
-        Windows — no code or assets were copied, just the point.
-        github.com/Marcus1571/diskled-plus
-        """
-        alert.alertStyle = .informational
-        alert.runModal()
+        append("By Marcus1571\n", font: NSFont.boldSystemFont(ofSize: 11))
+        append("Disk activity, shown the way hardware used to do it: one LED per channel, "
+             + "blinking for every single tick of I/O — 33 times per second, nothing "
+             + "averaged, nothing rounded up, nothing smoothed away.\n\n")
+        append("Inspired by Helge Klein's DiskLED for Windows — no code or assets "
+             + "were copied, just the point.\n\n")
+        append("License: MIT — full text in the repository.\n")
+        append("github.com/Marcus1571/diskled-plus", color: .linkColor,
+               link: URL(string: "https://github.com/Marcus1571/diskled-plus")!)
+        append("\n")
+        return text
     }
 }
