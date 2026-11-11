@@ -3,18 +3,23 @@
 ## Where the project stands right now
 
 **Verified working on device (2026-11-10, operator's Mac, macOS 27.2/arm64).**
-v0.5.1: the app builds clean, runs, polls IOKit at 33 Hz, and blinks — idle
+v0.6.0: the app builds clean, runs, polls IOKit at 33 Hz, and blinks — idle
 shows occasional green read blinks; sustained write load locks the icon
-steadily both-lit (green + red) as designed. **Real app icon now** (generated
-at package time from the LED colors; no more default placeholder in
-/Applications or the About dialog) and the About dialog is rewritten. **v0.5.0
-shipped the distribution stack**: Developer ID–signed `.app` (Sparkle
-embedded, hardened runtime), notarized + stapled DMG, EdDSA-signed
-`appcast.xml` per release, and Sparkle self-updating with startup + weekly
-checks and a **Check for Updates…** menu voice. The `/Applications` copy is
-the everyday way to run it; **the first live Sparkle rehearsal succeeded**
-(0.5.0 → 0.5.1 self-updated silently on device, 18:55 local, straight from
-the in-repo appcast).
+steadily both-lit (green + red) as designed. **New in 0.6.0**: a real
+Settings window (menu → Settings…, ⌘,) with the indicator's graphic layout
+(bars / new iStat-style two-dots look, new `ledLayout` default key) and the
+brightness slider; a standard macOS About panel (icon, version, credits with
+author + MIT + repo link). Sparkle self-updating ships since 0.5.0
+(signed/notarized DMG, EdDSA appcast; first live rehearsal 0.5.0 → 0.5.1
+succeeded silently on device). The `/Applications` copy is the everyday way
+to run it.
+
+**Open design decision (awaiting the operator):** the status-bar label to the
+left of the two dots in the dots layout ("dl+", "R/W" letters, "io", split
+plus, or no label at all) — six variants rendered by `scripts/make-mockups.swift`
+into `screenshots/statusbar-mockups.png`, 2026-11-11. Once a variant is
+picked, the renderer gains that layout variant and the status item switches
+to variable length to fit the label.
 
 ## What exists
 
@@ -22,8 +27,9 @@ the in-repo appcast).
 - `DiskActivitySource` — IOKit polling of `IOBlockStorageDriver` "Statistics"
   (bytes/ops read), aggregated over all disks, returned as per-tick deltas.
   Key names verified on this macOS build.
-- `LEDIconRenderer` — programmatic square icon: two vertical rectangles, left green
-  (reads), right red (writes); four cached states (off / R / W / both); not-template.
+- `LEDIconRenderer` — programmatic 16×16 pt icon in two layouts (bars: two
+  vertical rectangles; dots: two circles), left green (reads), right red
+  (writes); per-layout cached states (off / R / W / both); not-template.
 - `AppDelegate` — 30 ms `Timer` (`tolerance = 0`), blink-from-delta with no smoothing,
   menu with live B/s readout (1 s window, display-only), the Brightness submenu
   (10 steps, default 60%, persisted — see KB.md §Brightness), and About/Quit.

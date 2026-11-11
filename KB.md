@@ -69,25 +69,49 @@ interactive shell use the absolute path `/usr/bin/log`.
 
 ## Rendering
 
-- 4 NSImages cached (off / readsOnly / writesOnly / both), 16×16 pt, drawn
-  programmatically, `isTemplate = false`.
-- Icon only swapped when the LED state actually changed, to avoid pointless redraws
-  (the state machine itself still runs every tick).
+- Programmatic NSImages, 16×16 pt, `isTemplate = false`, one per
+  (layout, state, brightness). Icon only swapped when the LED state actually
+  changed, to avoid pointless redraws (the state machine itself still runs
+  every tick).
+- **Layouts** (§Settings): `bars` — two vertical rectangles separated by a
+  1 pt seam (original DiskLED look); `dots` — two circles side by side
+  (iStat-Menus-style, lower profile). Both keep left=reads-green,
+  right=writes-red and the same per-tick on/off rule; off state = same shapes
+  in near-dark tint.
 - Colors: readLit green sRGB(0.05, 1.00, 0.25); writeLit red sRGB(1.00, 0.15, 0.15);
   off tints near-dark green/red respectively.
+
+## Settings window
+
+- Menu → **Settings…** (⌘,) opens the app's preferences window
+  (`SettingsWindowController`, plain AppKit): **Indicator layout** radio
+  buttons (Bars / Dots) and a **LED brightness** slider (10–100 %).
+- Every change persists immediately and applies live; nothing is written on
+  window close. Menu and window stay in sync both ways through
+  `AppDelegate.sharedLayout` / `sharedBrightnessPercent` — the settings
+  window updates a checkmark in the Brightness submenu, a menu change updates
+  the slider on next `refresh()`.
+- Keys: `ledLayout` (string, `bars` default) and `ledBrightnessPercent`
+  (§Brightness). The settings window is available from bare-binary launches
+  too (unlike Start at Login / Check for Updates, nothing here needs a
+  bundle).
 
 ## Menu
 
 - Header "DiskLED-plus"; live lines "Reads — X/s" and "Writes — X/s" refreshed on
   menu open from the last ~1 s window (live-verified on device while the menu stays
   open); Brightness (§Brightness); Start at Login (§Start at Login, bundle
-  launches only); About dialog; Quit (⌘Q). No preferences window ships.
+  launches only); Check for Updates… (bundle launches only); **Settings…**
+  (⌘,, §Settings); **About DiskLED-plus** — the standard macOS About panel
+  (app icon, name, version) with credits: author Marcus1571, MIT license, and
+  a clickable repo link; Quit (⌘Q).
 
 ## Brightness
 
 - Right-click (any click on the status item) → menu → **Brightness** → ten items:
   `10%` `20%` `30%` `40%` `50%` `60%` `70%` `80%` `90%` `100%`. Checkmark marks the
-  active value. **Default 60%** (operator-set).
+  active value. **Default 60%** (operator-set). Also editable as a slider in the
+  Settings window (§Settings); both stay in sync.
 - Persisted immediately on selection: `UserDefaults.standard` key
   `ledBrightnessPercent` (integer 10–100, read clamped). It lands in
   `~/Library/Preferences/com.diskledplus.app.plist` when run from the .app bundle
@@ -172,13 +196,17 @@ interactive shell use the absolute path `/usr/bin/log`.
 
 ## Build and run
 
-Development-style run (bare binary):
+Development-style run (bundled, **not** the bare binary):
 
 ```
 git clone git@github.com:Marcus1571/diskled-plus.git ~/src/diskled-plus
-cd ~/src/diskled-plus && swift build -c release
-.build/release/DiskLEDPlus
+cd ~/src/diskled-plus && scripts/make-app.sh
+open .build/app/DiskLED-plus.app
 ```
+
+Since 0.5.0 the executable links Sparkle, so the bare
+`.build/release/DiskLEDPlus` aborts at dyld load (framework not on rpath) —
+always run the built bundle (v0.6.0, confirmed on device).
 
 Everyday install (bundled, start-at-login capable): `scripts/make-app.sh` then
 `cp -R .build/app/DiskLED-plus.app /Applications/` (details in §Packaging); enable

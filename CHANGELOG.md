@@ -1,5 +1,40 @@
 # CHANGELOG.md
 
+## [0.6.0] — 2026-11-11
+
+### Added
+- **Settings window** — new `Sources/DiskLEDPlus/SettingsWindowController.swift`.
+  Menu → **Settings…** (⌘,) opens the app's first real preferences window:
+  **Indicator layout** radio buttons (Bars / Dots) and a **LED brightness**
+  slider (10–100%). Every change persists immediately to `UserDefaults.standard`
+  and applies live to the status-bar icon; the window controls and the menu's
+  Brightness submenu stay in sync in both directions (static shared accessors
+  `AppDelegate.sharedLayout` / `sharedBrightnessPercent` are the single
+  cross-object surface).
+- **"Dots" indicator layout** — `LEDIconRenderer` now draws two layouts:
+  `bars` (the original two vertical rectangles) and `dots` (two circles side
+  by side, left green = reads, right red = writes — iStat-Menus-style, lower
+  profile for a crowded menu bar). Same unsmoothed per-tick blink rule and
+  off-state tints; brightness applies identically. Persisted under the new
+  UserDefaults key `ledLayout` (default `bars`, so existing installs keep
+  their look until changed).
+- **Standard macOS About panel** — `AppDelegate.showAbout` now uses
+  `NSApp.orderFrontStandardAboutPanel` (system panel: app icon, name,
+  version) with an attributed credits block: author (Marcus1571), the pitch,
+  the MIT license note, and a clickable link to
+  github.com/Marcus1571/diskled-plus. Replaces the modal NSAlert text dump.
+- `scripts/make-mockups.swift` — renders a status-bar design sheet (six
+  candidate layouts, including label variants) into `screenshots/` for
+  layout-design decisions; not part of the app.
+
+### Changed
+- `AppDelegate` — menu gains **Settings…**; `setBrightness` now routes
+  through the shared accessor; layout/brightness application centralized in
+  `applyLayout`/`applyBrightness` so menu and Settings window cannot drift.
+- `KB.md` — dev-run instructions corrected: since 0.5.0 the bare binary
+  links Sparkle and cannot launch without its framework (dyld abort); bare
+  dev runs are replaced by running the built bundle.
+
 ## [0.5.1] — 2026-11-10
 
 ### Added
