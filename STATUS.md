@@ -14,12 +14,11 @@ author + MIT + repo link). Sparkle self-updating ships since 0.5.0
 succeeded silently on device). The `/Applications` copy is the everyday way
 to run it.
 
-**Open design decision (awaiting the operator):** the status-bar label to the
-left of the two dots in the dots layout ("dl+", "R/W" letters, "io", split
-plus, or no label at all) — six variants rendered by `scripts/make-mockups.swift`
-into `screenshots/statusbar-mockups.png`, 2026-11-11. Once a variant is
-picked, the renderer gains that layout variant and the status item switches
-to variable length to fit the label.
+**Open design decision: RESOLVED (2026-11-11).** The operator picked the
+status-bar layout set from the design sheet: the original bars stay default,
+plus five new layouts — two dots, "dl+" stacked above the dots, "RW" letters
+as LEDs, the "dl+" split plus, and bars with a "dl+" label — all selectable
+and persisted in Settings (shipped as v0.7.0).
 
 ## What exists
 

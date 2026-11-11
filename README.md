@@ -28,9 +28,9 @@ moved data, near-dark when a tick had none:
 | <img src="docs/img/led-off.png" width="72" alt="LED off, both halves near-dark"> | <img src="docs/img/led-reads.png" width="72" alt="reads blinking green on the left"> | <img src="docs/img/led-writes.png" width="72" alt="writes blinking red on the right"> | <img src="docs/img/led-both.png" width="72" alt="reads and writes lit together"> |
 
 Clicking it opens a menu with the live B/s readout taken over a display-only
-~1 s window, **Settings…** (choose the indicator's graphic layout — bars or
-iStat-style two dots — and the brightness), **Start at Login**, and a standard
-About panel:
+~1 s window, **Settings…** (choose one of six indicator layouts — bars,
+dots, stacked "dl+" + dots, "R/W" letters, split plus, labeled bars — plus
+the brightness), **Start at Login**, and a standard About panel:
 
 | Menu | Brightness |
 |------|------------|

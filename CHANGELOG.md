@@ -1,5 +1,37 @@
 # CHANGELOG.md
 
+## [0.7.0] — 2026-11-11
+
+### Added
+- **Six indicator layouts** (operator's pick from the 2026-11-11 design
+  sheet) — `LEDLayout` grows from 2 to 6 cases, all selectable in the
+  Settings window, choice persisted under `ledLayout` (survives app updates):
+  - `bars` — the original two rectangles (default, unchanged).
+  - `dots` — two circles side by side (iStat-style).
+  - `dotsLabeled` — small white "dl+" **stacked above** the two dots
+    (operator's modification: minimize horizontal cost).
+  - `letters` — "RW" where the letters themselves are the LEDs (R green on
+    reads, W red on writes, near-dark when idle).
+  - `monogram` — "dl" in white plus an activity "+": green on reads-only,
+    red on writes-only, split diagonally (clipped glyph) when both, dim
+    gray when idle.
+  - `barsLabeled` — white "dl+" to the left of the bars.
+- **Live preview** in the Settings window: a 4x-scaled both-lit rendering of
+  the selected layout, refreshed on every layout/brightness change.
+- `LEDIconRenderer` — per-layout image sizes (labeled layouts are wider than
+  the 16×16 square: `dotsLabeled` 14×16, `barsLabeled` 30×16) and per-layout
+  drawing, incl. text rendering and the clipped-glyph split plus.
+- `scripts/make-mockups.swift` — regenerated as the six *shipped* variants
+  (screenshots/statusbar-shipped.png, 2026-11-11).
+
+### Changed
+- `AppDelegate` — status item now runs at `variableLength` (was `squareLength`)
+  so wider labeled layouts fit; `applyLayout` re-measures the item length.
+- Behavior notes (KB §Settings): white "dl+" labels stay lit at all times so
+  labeled layouts remain findable while the LEDs are off — the LED channels
+  themselves still follow the strict off state; idle "RW"/"+" letters use the
+  near-dark channel colors.
+
 ## [0.6.0] — 2026-11-11
 
 ### Added

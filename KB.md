@@ -73,19 +73,28 @@ interactive shell use the absolute path `/usr/bin/log`.
   (layout, state, brightness). Icon only swapped when the LED state actually
   changed, to avoid pointless redraws (the state machine itself still runs
   every tick).
-- **Layouts** (§Settings): `bars` — two vertical rectangles separated by a
-  1 pt seam (original DiskLED look); `dots` — two circles side by side
-  (iStat-Menus-style, lower profile). Both keep left=reads-green,
-  right=writes-red and the same per-tick on/off rule; off state = same shapes
-  in near-dark tint.
+- **Layouts** (§Settings), six cases selectable in the window: `bars` — two
+  vertical rectangles separated by a 1 pt seam (original DiskLED look);
+  `dots` — two circles side by side (iStat-Menus-style); `dotsLabeled` —
+  white "dl+" stacked above the dots; `letters` — "RW" as the LEDs;
+  `monogram` — "dl" + activity "+" (green/red/split/idle); `barsLabeled` —
+  white "dl+" left of the bars. All keep left/first=reads-green,
+  second=writes-red and the same per-tick on/off rule; off state = same
+  shapes in near-dark tint. White "dl+" labels stay lit at all times (so the
+  layout remains findable while LEDs are off); idle letters/plus use the
+  near-dark channel colors / a dim gray.
+- Image sizes: 16×16 pt for `bars`/`dots`/`letters`/`monogram`; 14×16 for
+  `dotsLabeled`; 30×16 for `barsLabeled`. The status item runs at
+  `variableLength` and is re-measured on layout change.
 - Colors: readLit green sRGB(0.05, 1.00, 0.25); writeLit red sRGB(1.00, 0.15, 0.15);
   off tints near-dark green/red respectively.
 
 ## Settings window
 
 - Menu → **Settings…** (⌘,) opens the app's preferences window
-  (`SettingsWindowController`, plain AppKit): **Indicator layout** radio
-  buttons (Bars / Dots) and a **LED brightness** slider (10–100 %).
+  (`SettingsWindowController`, plain AppKit): **Indicator layout** pop-up
+  (six layouts, §Rendering) with a live 4x preview of the both-lit state,
+  and a **LED brightness** slider (10–100 %).
 - Every change persists immediately and applies live; nothing is written on
   window close. Menu and window stay in sync both ways through
   `AppDelegate.sharedLayout` / `sharedBrightnessPercent` — the settings
