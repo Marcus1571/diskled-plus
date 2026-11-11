@@ -1,5 +1,47 @@
 # CHANGELOG.md
 
+## [0.8.0] — 2026-11-12
+
+### Added
+- **The labeled layouts' label now shows the detected system-drive type** —
+  "SSD" or "HDD" instead of a hard-coded "SSD" (operator request). Detection
+  runs once at launch; a system drive's medium type cannot change while the
+  process runs. Unknown/failed detection keeps the historical "SSD" label.
+  - New `Sources/DiskLEDPlus/SystemDriveType.swift` — the chain, each step
+    verified live on macOS 27.2: DiskArbitration gives the root volume's
+    `DAMediaBSDName` (e.g. "disk3s1s1"); slice suffixes are stripped to the
+    whole container disk ("disk3"); the whole `IOMedia` with that `BSD Name`
+    property is located in the IOKit registry; its parent chain is walked to
+    the first `IOBlockStorageDriver` ancestor (the physical drive hosting the
+    volume) and on to the provider device's `Device Characteristics`
+    dictionary — `Medium Type` = "Solid State" / "Rotational", with
+    `Protocol Characteristics` and a `Rotational Rate` number as fallbacks.
+  - The matched drive's product name and medium type are logged at startup
+    (unified log `com.diskledplus.disk`/`drive`, info level — visible with
+    `/usr/bin/log stream --info`); every failed step logs an error.
+  - `Sources/DiskLEDPlus/LEDIconRenderer.swift` — the label text is now
+    renderer state (`labelText`, default "SSD"); setting a new label clears
+    the image cache, and the labeled layouts (`dotsLabeled`, `monogram`,
+    `barsLabeled`) are sized from the current label. Settings-window layout
+    titles now say "drive label" instead of "SSD" (enum raw values unchanged —
+    persisted choices keep working).
+  - `Sources/DiskLEDPlus/AppDelegate.swift` — runs the detection once at
+    launch, before the first render, and logs the resolved label.
+
+### Fixed
+- **IOKit enumeration released the wrong registry entry on every iteration**
+  (`Sources/DiskLEDPlus/DiskActivitySource.swift`, found 2026-11-12 while
+  building the drive detection): `defer { IOObjectRelease(service) }` inside
+  the `while` loop runs at the iteration's end — *after* `service` has already
+  been reassigned to the NEXT handle — so every enumerated
+  `IOBlockStorageDriver` entry was released before it was ever read.
+  Consequences before the fix: only the first enumerated driver ever
+  contributed statistics (external drives never did), one registry handle
+  leaked per tick (~33/s), and every launch logged a spurious "Statistics
+  missing" warning. Releases now happen explicitly before fetching the next
+  entry. Verified live: both physical disks contribute, the warning is gone,
+  and the new detection finds the system drive on first try.
+
 ## [0.7.2] — 2026-11-11
 
 ### Changed

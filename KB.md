@@ -44,10 +44,51 @@ sustained activity produces contiguous lit ticks, which read as steadily ON.
   machine, e.g. 00:47 and again at 01:43 on 2026-11-10). The app treats a
   missing dictionary as zero contribution (no fake blink) and logs this once
   per process, not per tick.
+- **Registry iteration must release each entry explicitly before fetching the
+  next one.** A `defer { IOObjectRelease(service) }` inside the enumeration
+  loop runs at the iteration's end — *after* `service` has already been
+  reassigned to the NEXT handle — so every enumerated entry is released before
+  it is ever read. This bug shipped in 0.7.2 and earlier (found and fixed
+  2026-11-12): only the first enumerated driver ever contributed stats,
+  external drives never did, one registry handle leaked per tick (~33/s), and
+  every launch logged the spurious "Statistics missing" warning above. Keep
+  the explicit-release pattern for any future IOKit iteration.
 - Read-only; requires no root/admin.
 - `kIOMainPortDefault` (min macOS 12; package claims 13+).
 - Deliberate choice over matching bare `IOMedia`: IOMedia also matches partitions
   and volumes → double counting.
+
+## Drive type (system-drive label)
+
+- The labeled layouts' label ("SSD"/"HDD") is the detected medium type of the
+  drive hosting the root volume, resolved **once at launch**
+  (`SystemDriveTypeDetector.detect()` — a system drive's medium type cannot
+  change while the process runs). On any failed step the type is `unknown`
+  and the label stays "SSD" (historical behavior); the failed step is logged.
+- Chain, each step verified live on macOS 27.2 (2026-11-12):
+  1. DiskArbitration: the root volume's `DAMediaBSDName` (a synthesized APFS
+     snapshot volume, e.g. "disk3s1s1").
+  2. Strip slice suffixes → whole container disk ("disk3"); find the whole
+     `IOMedia` whose `BSD Name` property matches. (The synthesized container
+     media is class `AppleAPFSMedia` but still matches `IOServiceMatching("IOMedia")`;
+     note the registry node *name* is a display name like "APPLE SSD AP0512Z
+     Media" — match the `BSD Name` property, not the node name.)
+  3. Walk its parent chain (`kIOServicePlane`) to the first
+     `IOBlockStorageDriver` ancestor — the physical drive hosting the volume —
+     then continue up: the provider device node carries
+     `Device Characteristics` = { `Medium Type` = "Solid State" /
+     "Rotational", `Product Name`, … }. On Apple Silicon NVMe that node is
+     `IOEmbeddedNVMeBlockDevice`; on USB mass storage it is
+     `IOBlockStorageServices`.
+  4. Fallbacks if `Medium Type` is absent: `Protocol Characteristics` →
+     `Medium Type`, else `Rotational Rate` / `RotationRate` (nonzero = HDD,
+     explicit 0 = SSD convention).
+- Startup log (info level, subsystem `com.diskledplus.disk`, category
+  `drive`): the matched drive's product name, its reported medium type, and
+  the resulting label. View with `/usr/bin/log stream --info` (§Debug tracing).
+- Known limits: legacy Fusion drives are judged by the first parent chain
+  found (one physical store wins); USB enclosures that report no
+  characteristics resolve to unknown → "SSD".
 
 ## Debug tracing (opt-in)
 
@@ -76,15 +117,16 @@ interactive shell use the absolute path `/usr/bin/log`.
 - **Layouts** (§Settings), six cases selectable in the window: `bars` — two
   vertical rectangles separated by a 1 pt seam (original DiskLED look);
   `dots` — two circles side by side (iStat-Menus-style); `dotsLabeled` —
-  white "SSD" stacked above the dots; `letters` — "RW" as the LEDs;
-  `monogram` — white "SSD" with an activity line above (reads-green) and
-  below (writes-red) the text; `barsLabeled` — white "SSD" left of the
-  bars. All keep left/first=reads-green, second=writes-red and the same
-  per-tick on/off rule; off state = same shapes in near-dark tint. White
-  "SSD" labels stay lit at all times (so the layout remains findable while
-  LEDs are off); idle letters/lines use the near-dark channel colors.
+  the drive label stacked above the dots; `letters` — "RW" as the LEDs;
+  `monogram` — the drive label in white with an activity line above
+  (reads-green) and below (writes-red) the text; `barsLabeled` — the drive
+  label left of the bars. All keep left/first=reads-green, second=writes-red
+  and the same per-tick on/off rule; off state = same shapes in near-dark
+  tint. The label text is the detected system-drive type ("SSD"/"HDD",
+  §Drive type) and stays lit at all times (so the layout remains findable
+  while LEDs are off); idle letters/lines use the near-dark channel colors.
 - Image sizes: 16×16 pt for `bars`/`dots`/`letters`; stacked/labeled layouts
-  are sized from the measured "SSD" text (10 pt regular) — `dotsLabeled` and
+  are sized from the measured label text (10 pt regular) — `dotsLabeled` and
   `monogram` at 20 pt of the bar height (text on the "BAT" plane, LEDs on
   the "100%" plane, dots full 7.5 pt size, verified against the real bar
   2026-11-11), `barsLabeled` (centered 16 pt row). The status item runs at

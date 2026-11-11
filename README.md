@@ -29,9 +29,10 @@ moved data, near-dark when a tick had none:
 
 Clicking it opens a menu with the live B/s readout taken over a display-only
 ~1 s window, **Settings…** (choose one of six indicator layouts — bars,
-dots, stacked "SSD" + dots, "R/W" letters, "SSD" with blinking lines, or
-labeled bars — plus the brightness), **Start at Login**, and a standard
-About panel:
+dots, a stacked drive label + dots, "R/W" letters, the drive label with
+blinking lines, or labeled bars, where the label is the detected system
+drive type: "SSD", or "HDD" if you boot from spinning rust — plus the
+brightness), **Start at Login**, and a standard About panel:
 
 | Menu | Brightness |
 |------|------------|

@@ -2,17 +2,20 @@
 
 ## Where the project stands right now
 
-**Verified working on device (2026-11-10, operator's Mac, macOS 27.2/arm64).**
+**Verified working on device (2026-11-12, operator's Mac, macOS 27.2/arm64).**
 v0.6.0: the app builds clean, runs, polls IOKit at 33 Hz, and blinks — idle
 shows occasional green read blinks; sustained write load locks the icon
-steadily both-lit (green + red) as designed. **New in 0.6.0**: a real
-Settings window (menu → Settings…, ⌘,) with the indicator's graphic layout
-(bars / new iStat-style two-dots look, new `ledLayout` default key) and the
-brightness slider; a standard macOS About panel (icon, version, credits with
-author + MIT + repo link). Sparkle self-updating ships since 0.5.0
-(signed/notarized DMG, EdDSA appcast; first live rehearsal 0.5.0 → 0.5.1
-succeeded silently on device). The `/Applications` copy is the everyday way
-to run it.
+steadily both-lit (green + red) as designed. **New in 0.8.0**: the labeled
+layouts' "SSD" label became a *drive label* — the system drive's medium type
+is detected at launch via the IOKit registry (root volume → whole media →
+`IOBlockStorageDriver` → `Device Characteristics` → `Medium Type`) and the
+label reads "HDD" on a spinning-disk boot, staying "SSD" otherwise/unknown
+(see KB.md §Drive type). Same change fixed a real pre-existing bug: IOKit
+enumeration released each registry entry one step late, so external drives
+never contributed stats and one handle leaked per tick. Sparkle self-updating
+succeeded silently on device). A real Settings window (menu → Settings…, ⌘,)
+carries the layout and brightness preferences since 0.6.0. The `/Applications`
+copy is the everyday way to run it.
 
 **Open design decision: RESOLVED (2026-11-11).** The operator picked the
 status-bar layout set from the design sheet: the original bars stay default,
@@ -21,7 +24,9 @@ as LEDs, "SSD" with a blinking line above and below the text, and bars with
 an "SSD" label — all selectable and persisted in Settings v0.7.0/resolved design; v0.7.1 renamed labels to "SSD"; v0.7.2 tuned the
 stacked layouts to the full bar height after real-bar comparison with the
 neighboring iStat elements (10 pt regular label, full-size dots, lines at
-the extreme planes).
+the extreme planes). v0.8.0 made the label *dynamic*: it reads the detected
+system-drive medium type — "HDD" on a spinning-disk boot, "SSD" otherwise
+(§KB.md Drive type).
 
 ## What exists
 
@@ -29,9 +34,14 @@ the extreme planes).
 - `DiskActivitySource` — IOKit polling of `IOBlockStorageDriver` "Statistics"
   (bytes/ops read), aggregated over all disks, returned as per-tick deltas.
   Key names verified on this macOS build.
-- `LEDIconRenderer` — programmatic 16×16 pt icon in two layouts (bars: two
-  vertical rectangles; dots: two circles), left green (reads), right red
-  (writes); per-layout cached states (off / R / W / both); not-template.
+- `LEDIconRenderer` — programmatic status-bar icon across six layouts (bars:
+  two vertical rectangles; dots: two circles; three drive-labeled variants;
+  "RW" letters), left green (reads), right red (writes); per-layout cached
+  states (off / R / W / both); not-template. The label text is the detected
+  system-drive type ("SSD"/"HDD", KB.md §Drive type).
+- `SystemDriveType` — one-shot launch detection of the root volume's drive
+  medium type from the IOKit registry (feeds the labeled layouts' label;
+  unknown falls back to "SSD").
 - `AppDelegate` — 30 ms `Timer` (`tolerance = 0`), blink-from-delta with no smoothing,
   menu with live B/s readout (1 s window, display-only), the Brightness submenu
   (10 steps, default 60%, persisted — see KB.md §Brightness), and About/Quit.
