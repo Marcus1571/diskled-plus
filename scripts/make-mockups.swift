@@ -85,15 +85,15 @@ func letters(_ bar: NSRect, text: String, firstColor: NSColor, secondColor: NSCo
 
 // White "SSD" stacked above the dot pair — the shipped .dotsLabeled layout.
 func stackedDots(_ bar: NSRect) {
-    let font = NSFont.systemFont(ofSize: 9, weight: .semibold)
+    let font = NSFont.systemFont(ofSize: 10, weight: .regular)
     let text = "SSD"
     let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: white]
     let size = (text as NSString).size(withAttributes: attrs)
-    let iconRect = NSRect(x: bar.midX - 10, y: bar.midY - 9.5, width: 20, height: 17)
+    let iconRect = NSRect(x: bar.midX - 10.5, y: bar.midY - 10.5, width: 21, height: 20)
     (text as NSString).draw(
         at: NSPoint(x: iconRect.midX - size.width / 2, y: iconRect.maxY - size.height),
         withAttributes: attrs)
-    let d: CGFloat = 5, gap: CGFloat = 1
+    let d: CGFloat = 7.5, gap: CGFloat = 1
     let total = d * 2 + gap
     let x = iconRect.midX - total / 2
     dot(NSRect(x: x, y: iconRect.minY, width: d, height: d), color: readLit)
@@ -103,11 +103,11 @@ func stackedDots(_ bar: NSRect) {
 // "SSD" with an activity line above (reads) and below (writes) — the shipped
 // .monogram layout.
 func monogramLines(_ bar: NSRect) {
-    let font = NSFont.systemFont(ofSize: 9, weight: .semibold)
+    let font = NSFont.systemFont(ofSize: 10, weight: .regular)
     let text = "SSD"
     let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: white]
     let size = (text as NSString).size(withAttributes: attrs)
-    let iconRect = NSRect(x: bar.midX - 10, y: bar.midY - 9.5, width: 20, height: 17)
+    let iconRect = NSRect(x: bar.midX - 10.5, y: bar.midY - 10.5, width: 21, height: 20)
     let lineWidth = ceil(size.width), thickness: CGFloat = 1.5
     let x = iconRect.midX - lineWidth / 2
     readLit.setFill()

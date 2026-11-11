@@ -49,9 +49,10 @@ enum LEDLayout: String, CaseIterable {
         }
     }
 
-    /// Label font and text used by the labeled layouts ("SSD", iStat-style
-    /// two-line density: ~9 pt semibold, tight against the bar height).
-    static let labelFont = NSFont.systemFont(ofSize: 9, weight: .semibold)
+    /// Label font and text used by the labeled layouts ("SSD", iStat-style:
+    /// ~10 pt regular — thinner than a semibold, matching the neighboring
+    /// iStat two-line elements).
+    static let labelFont = NSFont.systemFont(ofSize: 10, weight: .regular)
     static let labelText = "SSD"
 
     static func labelWidth(_ font: NSFont) -> CGFloat {
@@ -60,16 +61,17 @@ enum LEDLayout: String, CaseIterable {
 
     /// Status-item image size per layout. Labeled layouts are sized from the
     /// measured label text; the status item runs at variable length so each
-    /// layout gets its fit. Stacked layouts use the full bar height (17 pt)
-    /// so no vertical space is wasted.
+    /// layout gets its fit. Stacked layouts use 20 pt of the bar height —
+    /// text tight at the top plane, LEDs at the very bottom plane (verified
+    /// against iStat's BAT/100% element on the real bar).
     var iconSize: NSSize {
         switch self {
         case .bars, .dots, .letters:
             return NSSize(width: 16, height: 16)
         case .dotsLabeled:
-            return NSSize(width: Self.labelWidth(Self.labelFont) + 1, height: 17)
+            return NSSize(width: Self.labelWidth(Self.labelFont) + 1, height: 20)
         case .monogram:
-            return NSSize(width: Self.labelWidth(Self.labelFont) + 2, height: 17)
+            return NSSize(width: Self.labelWidth(Self.labelFont) + 2, height: 20)
         case .barsLabeled:
             return NSSize(width: Self.labelWidth(Self.labelFont) + 3 + 14, height: 16)
         }
@@ -143,7 +145,8 @@ final class LEDIconRenderer {
 
         case .dotsLabeled:
             // White "SSD" stacked above the dot pair: text tight to the top of
-            // the bar height, dots at the very bottom — no wasted margin.
+            // the bar height, dots the same size as the standalone dots layout
+            // (7.5 pt) at the very bottom — no wasted margin, no shrunken LEDs.
             let font = LEDLayout.labelFont
             let text = LEDLayout.labelText as NSString
             let attrs = textAttributes(font)
@@ -151,7 +154,7 @@ final class LEDIconRenderer {
             text.draw(at: NSPoint(x: rect.midX - textSize.width / 2,
                                   y: rect.maxY - textSize.height),
                       withAttributes: attrs)
-            let d: CGFloat = 5
+            let d: CGFloat = (16 - gap) / 2
             let total = d * 2 + gap
             let x = rect.midX - total / 2
             (readsActive ? readLit : readOff).setFill()
@@ -179,7 +182,8 @@ final class LEDIconRenderer {
         case .monogram:
             // "SSD" in white (always lit) with an activity line above and below:
             // top line green on reads, bottom line red on writes, both near-dark
-            // when idle. Lines span the text width, like over/underlines.
+            // when idle. Lines span the text width (over/underline style); the
+            // red line sits at the very bottom of the bar height.
             let font = LEDLayout.labelFont
             let text = LEDLayout.labelText as NSString
             let attrs = textAttributes(font)
