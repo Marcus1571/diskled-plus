@@ -120,3 +120,22 @@ session can rerun or extend the set. The installed app must be running from
   the menu — benign, real-screenshot furniture on a public repo).
 - The LED state in a menu shot is whatever the moment had (menu.png caught
   both-lit, bright-raw reads-lit) — a cosmetic lottery, not a bug.
+
+## Appearance KVO: the usagebar loop lesson and why this variant is safe (2026-11-14)
+
+usagebar's first attempt at an appearance-adaptive menu-bar label observed the
+status button's `effectiveAppearance` and re-set the image on change — macOS
+answered a new image by changing the appearance again, and the app redrew in
+an endless loop (idle CPU ~90 % of a core; fixed in usagebar 0.1.1 by the
+self-rendering adaptive image with no observer, see usagebar findings
+2026-11-01).
+
+diskled-plus 0.10.3 uses a different shape: KVO on **`NSApp.effectiveAppearance`**
+(the app's resolved appearance, not the button's) forcing one redraw of the
+LED icon. Setting the status-item image does not change the app's
+effectiveAppearance, so there is no feedback edge. Unverified against a real
+system-appearance flip (macOS 27 removed System Events' appearance scripting,
+so the session could not toggle it): if a flip ever produces *repeated*
+"appearance changed, LED icon re-rendered" log lines, that is the loop —
+replace the KVO with usagebar's two-variant adaptive image and remove the
+observer.
