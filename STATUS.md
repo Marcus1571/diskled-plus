@@ -2,6 +2,9 @@
 
 ## Where the project stands right now
 
+**0.10.2:** PayPal link and QR payload lowercased to
+`paypal.me/marcodalmoro` (QR asset regenerated and self-verified).
+
 **0.10.1:** About-page links are real buttons (the attributed NSTextField
 link labels never fired on click — verified on device that the buttons do).
 
