@@ -1,5 +1,20 @@
 # CHANGELOG.md
 
+## [0.10.3] — 2026-11-14
+
+### Fixed
+- **Label/off colors went stale after a system appearance flip.** The label
+  ("SSD"/"HDD", "RW") and idle tint already render with the dynamic
+  `NSColor.labelColor` (0.8.2/0.8.3 — white on a dark bar, black on a light
+  one), but the icon only redraws on an LED state change, so after switching
+  the system between dark and light the cached status-item image kept the old
+  color until the next blink — indefinitely on an idle disk.
+  - `Sources/DiskLEDPlus/AppDelegate.swift` — KVO on `NSApp.effectiveAppearance`
+    forces one redraw on a flip (and logs it); invalidated on termination. No
+    polling. Live flip test not possible from the session (macOS 27 removed
+    System Events' appearance scripting); the resolution mechanism itself was
+    verified on device in 0.8.2.
+
 ## [0.10.2] — 2026-11-14
 
 ### Changed

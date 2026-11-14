@@ -2,6 +2,11 @@
 
 ## Where the project stands right now
 
+**0.10.3:** appearance-flip re-render added — KVO on `effectiveAppearance` forces one
+LED redraw when the system flips dark↔light, so the dynamic label/off colors never go
+stale on an idle disk (live flip test pending the operator's eyes; macOS 27 removed the
+AppleScript appearance control the session could have used).
+
 **0.10.2:** PayPal link and QR payload lowercased to
 `paypal.me/marcodalmoro` (QR asset regenerated and self-verified).
 

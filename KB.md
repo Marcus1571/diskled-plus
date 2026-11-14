@@ -132,6 +132,11 @@ interactive shell use the absolute path `/usr/bin/log`.
   `variableLength` and is re-measured on layout change.
 - Colors: readLit green sRGB(0.05, 1.00, 0.25); writeLit red sRGB(1.00, 0.15, 0.15);
   off = `labelColor` @15% alpha (0.8.3; `.clear` in 0.8.1/0.8.2 hid the idle icon; a near-dark tint read as black↔color on a light bar).
+- **Label + off colors are dynamic** (`NSColor.labelColor`, 0.8.2/0.8.3): resolved at draw
+  time against the menu bar's appearance — white on a dark bar, black on a light one. Since
+  the icon only redraws on an LED state change, the app KVO-observes
+  `NSApp.effectiveAppearance` and forces one redraw on a system appearance flip (0.10.3) —
+  otherwise the cached image kept the old color until the next blink. No polling.
 
 ## Settings window
 

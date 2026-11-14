@@ -125,6 +125,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         buildMenu()
         render(.off)
+        appearanceObservation = NSApp.observe(\.effectiveAppearance, options: []) { [weak self] _, _ in
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                // Force one redraw so the dynamic label/off colors re-resolve
+                // against the bar's new appearance.
+                self.render(self.lastRenderedState ?? .off)
+                log.info("appearance changed, LED icon re-rendered")
+            }
+        }
         let t = Timer(timeInterval: Constants.tickInterval, repeats: true) { [weak self] _ in
             self?.beat()
         }
@@ -135,6 +144,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        appearanceObservation?.invalidate()
+        appearanceObservation = nil
         guard let timer else { return }
         timer.invalidate()
         self.timer = nil
@@ -143,6 +154,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool { true }
 
     // MARK: - Blink loop
+
+    // The LED redraws only on a state change (idle = no redraws), so
+    // NSColor.labelColor's draw-time resolution would go stale after a system
+    // appearance flip: the cached status-item image keeps the old white/black
+    // until the next blink. KVO on effectiveAppearance forces one redraw on
+    // the flip instead — still no polling.
+    private var appearanceObservation: NSKeyValueObservation?
 
     private func beat() {
         let tick = source.tick()
