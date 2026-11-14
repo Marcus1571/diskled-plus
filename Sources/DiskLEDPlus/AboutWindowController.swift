@@ -120,7 +120,7 @@ final class AboutWindowController: NSObject {
         if let qrView { views.append(qrView) }
         views.append(contentsOf: [
             label("Support DiskLED-plus", 13, .semibold),
-            link("paypal.me/MarcoDalmoro", URL(string: "https://paypal.me/MarcoDalmoro")!, 11),
+            link("paypal.me/marcodalmoro", URL(string: "https://paypal.me/marcodalmoro")!, 11),
             label("Point your phone's camera at the code — or click the link.", 10,
                   .regular, .secondaryLabelColor),
             divider(),

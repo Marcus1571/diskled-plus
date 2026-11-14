@@ -170,7 +170,7 @@ func drawAbout(into rect: NSRect) {
         y += side + 6
     }
     y += label("Support DiskLED-plus", 13, .semibold, .labelColor, cx, y) + 5
-    y += label("paypal.me/MarcoDalmoro", 11, .regular, .linkColor, cx, y) + 5
+    y += label("paypal.me/marcodalmoro", 11, .regular, .linkColor, cx, y) + 5
     y += label("Point your phone's camera at the code — or click the link.", 10,
                .regular, .secondaryLabelColor, cx, y) + 14
 
