@@ -1,5 +1,31 @@
 # CHANGELOG.md
 
+## [0.9.0] — 2026-11-14
+
+### Added
+- **About mini page with PayPal donation QR** — the same page as NeverSleep's
+  and dotbar's, replacing the standard macOS About panel (which could not
+  carry the QR).
+  - `Sources/DiskLEDPlus/AboutWindowController.swift` (new) — plain-AppKit
+    NSWindow (no SwiftUI, matching the rest of the app): app icon at 96 pt,
+    name, `Version x (build y)`, divider, PayPal QR (88 pt) + "Support
+    DiskLED-plus" + tappable `paypal.me/MarcoDalmoro` link + camera hint
+    (phones can't scan their own screen), divider, © 2026 Marcus1571, MIT,
+    clickable repo link, project tagline. Window cached; degrades to text
+    without the bundled QR (bare-binary launches).
+  - `Sources/DiskLEDPlus/AppDelegate.swift` — `showAbout` now opens
+    `AboutWindowController.shared` instead of
+    `orderFrontStandardAboutPanel`; the old `aboutCredits()` string builder
+    is gone (its content moved onto the page).
+  - `scripts/make-qr.swift` (new) — generates `assets/paypal-qr.png`
+    (committed asset) with CoreImage's `CIQRCodeGenerator`; self-verifies by
+    decoding the written PNG back (CIDetector QR reader) and fails unless the
+    payload round-trips exactly.
+  - `scripts/make-app.sh` — copies `assets/paypal-qr.png` into
+    `Resources/paypal-qr.png`.
+  - `assets/paypal-qr.png` (new) — the shipped QR asset, 468×468,
+    self-verified payload `https://paypal.me/MarcoDalmoro`.
+
 ## [0.8.3] — 2026-11-14
 
 ### Fixed

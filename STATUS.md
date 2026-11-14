@@ -2,6 +2,10 @@
 
 ## Where the project stands right now
 
+**0.9.0:** About is now the NeverSleep-style mini page with the PayPal
+donation QR (verified on device: QR renders, link and layout correct —
+`screenshots/about-0.9.0-verify.png`).
+
 **0.8.3:** off state = labelColor @15% alpha (clear in 0.8.1/0.8.2 made the icon invisible at idle; friend's Mac reported app missing). Unverified on a light bar.
 
 **0.8.2:** label color now `NSColor.labelColor` (adapts to light/dark bar) — unverified on a light bar.
