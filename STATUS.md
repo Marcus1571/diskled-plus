@@ -2,6 +2,8 @@
 
 ## Where the project stands right now
 
+**0.8.1:** LED off state is now transparent (nothing drawn) instead of a near-dark tint — on a light menu bar the old blink read as black↔green/red. Awaiting operator's eyes on a light bar. `docs/img/led-off.png` still shows the old near-dark off state (regenerate when convenient).
+
 **Verified working on device (2026-11-12, operator's Mac, macOS 27.2/arm64).**
 v0.6.0: the app builds clean, runs, polls IOKit at 33 Hz, and blinks — idle
 shows occasional green read blinks; sustained write load locks the icon

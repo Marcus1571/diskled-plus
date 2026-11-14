@@ -96,10 +96,11 @@ final class LEDIconRenderer {
     // so 60% looks like the same hue dimmed against the menu bar, never color-shifted.
     private let readLitFull  = NSColor(srgbRed: 0.05, green: 1.00, blue: 0.25, alpha: 1)
     private let writeLitFull = NSColor(srgbRed: 1.00, green: 0.15, blue: 0.15, alpha: 1)
-    // Off state: same shapes, near-dark so the indicator is still locatable. Not affected
-    // by the brightness setting — its role is "the light is off", not "light at zero".
-    private let readOff  = NSColor(srgbRed: 0.04, green: 0.16, blue: 0.07, alpha: 1)
-    private let writeOff = NSColor(srgbRed: 0.18, green: 0.04, blue: 0.04, alpha: 1)
+    // Off state: nothing drawn, so a blink is "nothing <-> color" on any menu bar
+    // (a dark off tint read as black <-> green on a light bar). Not affected by the
+    // brightness setting.
+    private let readOff  = NSColor.clear
+    private let writeOff = NSColor.clear
     // White labels stay lit at all times so a labeled layout remains
     // findable while the LEDs are off — same role as any other menu-bar text.
     private let labelColor = NSColor.white

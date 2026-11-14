@@ -1,5 +1,17 @@
 # CHANGELOG.md
 
+## [0.8.1] — 2026-11-14
+
+### Changed
+- **LED off state is transparent instead of near-dark** (operator request).
+  On a light menu bar the old near-dark tints made a blink look like
+  black↔green / black↔red; it is now nothing↔color on any bar. Behavior change.
+  - `Sources/DiskLEDPlus/LEDIconRenderer.swift` — `readOff` / `writeOff`
+    are `NSColor.clear` (were near-dark green/red sRGB tints). Applies to every
+    layout, including idle letters/lines of the labeled layouts; the white
+    label is unchanged. Unlabeled layouts are now invisible while idle.
+  - Docs: `KB.md`, `README.md`, `STATUS.md` updated to match.
+
 ## [0.8.0] — 2026-11-12
 
 ### Added
