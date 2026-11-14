@@ -21,11 +21,11 @@ dialog shows):
 
 The status item is a 16×16 pt square split into two vertical rectangles —
 **left green = reads, right red = writes** — lit for every tick that actually
-moved data, transparent (nothing drawn) when a tick had none:
+moved data, a faint tint when a tick had none:
 
 | Off | Reads | Writes | Both |
 |-----|-------|--------|------|
-| <img src="docs/img/led-off.png" width="72" alt="LED off, nothing drawn"> | <img src="docs/img/led-reads.png" width="72" alt="reads blinking green on the left"> | <img src="docs/img/led-writes.png" width="72" alt="writes blinking red on the right"> | <img src="docs/img/led-both.png" width="72" alt="reads and writes lit together"> |
+| <img src="docs/img/led-off.png" width="72" alt="LED off, faint tint"> | <img src="docs/img/led-reads.png" width="72" alt="reads blinking green on the left"> | <img src="docs/img/led-writes.png" width="72" alt="writes blinking red on the right"> | <img src="docs/img/led-both.png" width="72" alt="reads and writes lit together"> |
 
 Clicking it opens a menu with the live B/s readout taken over a display-only
 ~1 s window, **Settings…** (choose one of six indicator layouts — bars,

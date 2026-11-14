@@ -1,5 +1,14 @@
 # CHANGELOG.md
 
+## [0.8.3] — 2026-11-14
+
+### Fixed
+- **App looked absent from the menu bar on 0.8.1/0.8.2.** The fully transparent
+  off state made unlabeled layouts invisible whenever the disk was idle.
+  - `Sources/DiskLEDPlus/LEDIconRenderer.swift` — `readOff`/`writeOff` are now
+    `NSColor.labelColor` at 15% alpha (dynamic: faint dark on a light bar, faint
+    light on a dark bar) instead of `.clear`. Supersedes the 0.8.1 off state.
+
 ## [0.8.2] — 2026-11-14
 
 ### Changed

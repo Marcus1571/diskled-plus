@@ -12,7 +12,7 @@ into two vertical rectangles separated by a 1 pt seam:
 | Left | bright green | reads | read bytes Δ > 0 OR read ops Δ > 0 |
 | Right | red | writes | write bytes Δ > 0 OR write ops Δ > 0 |
 
-Off state = nothing drawn (transparent), so a blink is nothing↔color on any menu bar. Blink cadence = the timer tick;
+Off state = faint adaptive tint (labelColor @15% alpha), locatable on any menu bar. Blink cadence = the timer tick;
 sustained activity produces contiguous lit ticks, which read as steadily ON.
 
 ## The blink model
@@ -121,9 +121,9 @@ interactive shell use the absolute path `/usr/bin/log`.
   `monogram` — the drive label in white with an activity line above
   (reads-green) and below (writes-red) the text; `barsLabeled` — the drive
   label left of the bars. All keep left/first=reads-green, second=writes-red
-  and the same per-tick on/off rule; off state = nothing drawn (transparent). The label text is the detected system-drive type ("SSD"/"HDD",
+  and the same per-tick on/off rule; off state = faint adaptive tint. The label text is the detected system-drive type ("SSD"/"HDD",
   §Drive type) and stays lit at all times (so the layout remains findable
-  while LEDs are off); idle letters/lines are not drawn.
+  while LEDs are off); idle letters/lines use the faint tint.
 - Image sizes: 16×16 pt for `bars`/`dots`/`letters`; stacked/labeled layouts
   are sized from the measured label text (10 pt regular) — `dotsLabeled` and
   `monogram` at 20 pt of the bar height (text on the "BAT" plane, LEDs on
@@ -131,7 +131,7 @@ interactive shell use the absolute path `/usr/bin/log`.
   2026-11-11), `barsLabeled` (centered 16 pt row). The status item runs at
   `variableLength` and is re-measured on layout change.
 - Colors: readLit green sRGB(0.05, 1.00, 0.25); writeLit red sRGB(1.00, 0.15, 0.15);
-  off = `NSColor.clear` (since 0.8.1; a near-dark tint read as black↔color on a light bar).
+  off = `labelColor` @15% alpha (0.8.3; `.clear` in 0.8.1/0.8.2 hid the idle icon; a near-dark tint read as black↔color on a light bar).
 
 ## Settings window
 

@@ -2,6 +2,8 @@
 
 ## Where the project stands right now
 
+**0.8.3:** off state = labelColor @15% alpha (clear in 0.8.1/0.8.2 made the icon invisible at idle; friend's Mac reported app missing). Unverified on a light bar.
+
 **0.8.2:** label color now `NSColor.labelColor` (adapts to light/dark bar) — unverified on a light bar.
 
 **0.8.1:** LED off state is now transparent (nothing drawn) instead of a near-dark tint — on a light menu bar the old blink read as black↔green/red. Awaiting operator's eyes on a light bar. `docs/img/led-off.png` still shows the old near-dark off state (regenerate when convenient).
