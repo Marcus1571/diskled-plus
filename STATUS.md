@@ -2,6 +2,9 @@
 
 ## Where the project stands right now
 
+**0.10.1:** About-page links are real buttons (the attributed NSTextField
+link labels never fired on click — verified on device that the buttons do).
+
 **0.10.0:** "Report a Bug…" menu item (ladybug SF Symbol) + About page section,
 both opening the repo's GitHub Issues. Verified on device (menu + About
 screenshots in `screenshots/`).

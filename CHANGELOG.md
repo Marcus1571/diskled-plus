@@ -1,5 +1,20 @@
 # CHANGELOG.md
 
+## [0.10.1] — 2026-11-14
+
+### Fixed
+- **About-page links were not clickable.** The three links (PayPal, repo,
+  issues) were attributed `NSTextField` labels carrying the `.link` attribute
+  with `isSelectable = true` — the standard recipe — but clicks never fired
+  in this window (confirmed on device: clicking the link text opened no
+  browser and did not even activate the app).
+  - `Sources/DiskLEDPlus/AboutWindowController.swift` — links are now
+    `LinkButton`s: borderless `NSButton`s styled as blue link text whose
+    target/action calls `NSWorkspace.shared.open(url)` directly, with a
+    pointing-hand cursor on hover. No field-editor dependency, so clicking
+    always works. Verified on device: both the PayPal and Issues buttons
+    open the browser.
+
 ## [0.10.0] — 2026-11-14
 
 ### Added
