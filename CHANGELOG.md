@@ -1,5 +1,22 @@
 # CHANGELOG.md
 
+## [0.10.0] — 2026-11-14
+
+### Added
+- **"Report a Bug" in the menu and on the About page** — both open the
+  repository's GitHub Issues page
+  (`https://github.com/Marcus1571/diskled-plus/issues`).
+  - `Sources/DiskLEDPlus/AppDelegate.swift` — new menu item "Report a Bug…"
+    between "About DiskLED-plus" and Quit, with the SF Symbol `ladybug.fill`
+    (template image: macOS tints it with the row color, highlighted rows
+    included); action opens the URL via `NSWorkspace.shared.open` and logs it.
+  - `Sources/DiskLEDPlus/AboutWindowController.swift` — new compact section
+    under the repo link: ladybug symbol + "Report a Bug" (semibold, same style
+    as the support block) and a tappable link to the issues page.
+  - `scripts/make-bug-report-mockup.swift` (new) — the design sheet the
+    operator approved (menu icon options + About placement), kept alongside
+    `make-mockups.swift` per the existing mockup-script precedent.
+
 ## [0.9.0] — 2026-11-14
 
 ### Added

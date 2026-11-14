@@ -158,8 +158,10 @@ interactive shell use the absolute path `/usr/bin/log`.
   (⌘,, §Settings); **About DiskLED-plus** — the custom About mini page
   (`AboutWindowController.swift`, same design as NeverSleep's and dotbar's):
   app icon, name, version, the PayPal donation QR + `paypal.me/MarcoDalmoro`
-  link (§Packaging), © 2026 Marcus1571, MIT license, a clickable repo link and
-  the project tagline; Quit (⌘Q).
+  link (§Packaging), © 2026 Marcus1571, MIT license, a clickable repo link, a
+  "Report a Bug" section (ladybug + link to the repo's GitHub Issues page),
+  and the project tagline; **Report a Bug…** — menu item with the SF Symbol
+  `ladybug.fill`, opens the same GitHub Issues page in the browser; Quit (⌘Q).
 
 ## Brightness
 

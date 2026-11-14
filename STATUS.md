@@ -2,6 +2,10 @@
 
 ## Where the project stands right now
 
+**0.10.0:** "Report a Bug…" menu item (ladybug SF Symbol) + About page section,
+both opening the repo's GitHub Issues. Verified on device (menu + About
+screenshots in `screenshots/`).
+
 **0.9.0:** About is now the NeverSleep-style mini page with the PayPal
 donation QR (verified on device: QR renders, link and layout correct —
 `screenshots/about-0.9.0-verify.png`).
