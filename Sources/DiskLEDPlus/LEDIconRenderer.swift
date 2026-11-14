@@ -101,9 +101,9 @@ final class LEDIconRenderer {
     // brightness setting.
     private let readOff  = NSColor.clear
     private let writeOff = NSColor.clear
-    // White labels stay lit at all times so a labeled layout remains
+    // Labels (system label color: white on a dark bar, black on a light one) stay lit at all times so a labeled layout remains
     // findable while the LEDs are off — same role as any other menu-bar text.
-    private let labelColor = NSColor.white
+    private let labelColor = NSColor.labelColor // dynamic: resolved at draw time against the menu bar's appearance
 
     /// Text drawn by the labeled layouts: the detected system-drive medium
     /// type ("SSD" / "HDD"), set once at launch by the app delegate (see

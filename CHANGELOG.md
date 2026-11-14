@@ -1,5 +1,15 @@
 # CHANGELOG.md
 
+## [0.8.2] — 2026-11-14
+
+### Changed
+- **Label text follows the menu bar's appearance** (operator request): the
+  "SSD"/"HDD" label was always white, unreadable on a light bar. Behavior change.
+  - `Sources/DiskLEDPlus/LEDIconRenderer.swift` — `labelColor` is
+    `NSColor.labelColor` (dynamic, resolved when the icon is drawn) instead of
+    `NSColor.white`: white on a dark bar, black on a light one. Not yet
+    verified on a light bar — operator to confirm.
+
 ## [0.8.1] — 2026-11-14
 
 ### Changed
