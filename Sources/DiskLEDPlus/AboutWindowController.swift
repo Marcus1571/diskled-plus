@@ -98,6 +98,9 @@ final class AboutWindowController: NSObject {
             label("MIT", 11, .regular, .secondaryLabelColor),
             link("github.com/Marcus1571/diskled-plus",
                  URL(string: "https://github.com/Marcus1571/diskled-plus")!, 13),
+            bugRow(),
+            link("github.com/Marcus1571/diskled-plus/issues",
+                 URL(string: "https://github.com/Marcus1571/diskled-plus/issues")!, 11),
             tagline,
         ])
 
@@ -113,5 +116,29 @@ final class AboutWindowController: NSObject {
         w.isReleasedWhenClosed = false
         w.contentView = stack
         return w
+    }
+
+    /// The bug-report section: SF Symbol ladybug + "Report a Bug" as a compact
+    /// sibling of the support block (the tappable issues URL is a separate row
+    /// below, added by buildWindow).
+    private func bugRow() -> NSView {
+        let text = NSTextField(labelWithString: "Report a Bug")
+        text.font = .systemFont(ofSize: 13, weight: .semibold)
+        text.alignment = .center
+        let stack = NSStackView(views: [symbolLabel(), text])
+        stack.orientation = .horizontal
+        stack.spacing = 5
+        stack.alignment = .centerY
+        return stack
+    }
+
+    private func symbolLabel() -> NSView {
+        let image = NSImage(systemSymbolName: "ladybug.fill", accessibilityDescription: "Report a Bug")?
+            .withSymbolConfiguration(.init(pointSize: 12, weight: .regular))
+        let v = NSImageView(image: image ?? NSImage())
+        v.widthAnchor.constraint(equalToConstant: 16).isActive = true
+        v.heightAnchor.constraint(equalToConstant: 15).isActive = true
+        v.setAccessibilityLabel("Bug")
+        return v
     }
 }

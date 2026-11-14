@@ -269,6 +269,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         about.target = self
         menu.addItem(about)
 
+        // Report a Bug: SF Symbol ladybug (template — macOS tints it with the
+        // row color, highlighted rows included), opens the repo's Issues page.
+        let bug = NSMenuItem(title: "Report a Bug…",
+                             action: #selector(reportBug),
+                             keyEquivalent: "")
+        bug.target = self
+        bug.image = NSImage(systemSymbolName: "ladybug.fill", accessibilityDescription: "Report a Bug")?
+            .withSymbolConfiguration(.init(pointSize: 13, weight: .regular))
+        menu.addItem(bug)
+
         let quit = NSMenuItem(title: "Quit DiskLED-plus",
                               action: #selector(NSApplication.terminate(_:)),
                               keyEquivalent: "q")
@@ -326,6 +336,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         controller.showWindow(self)
         controller.window?.makeKeyAndOrderFront(self)
         NSApp.activate(ignoringOtherApps: true)
+    }
+
+    // MARK: - Report a Bug
+
+    /// Opens the repository's GitHub Issues page in the default browser.
+    @objc private func reportBug() {
+        guard let url = URL(string: "https://github.com/Marcus1571/diskled-plus/issues") else { return }
+        NSWorkspace.shared.open(url)
+        log.info("opened GitHub Issues from the Report a Bug menu item")
     }
 
     // MARK: - About (custom mini page)
