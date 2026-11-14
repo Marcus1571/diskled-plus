@@ -328,49 +328,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         NSApp.activate(ignoringOtherApps: true)
     }
 
-    // MARK: - About (standard macOS panel)
+    // MARK: - About (custom mini page)
 
-    /// Standard macOS About panel: app icon, name, version, and a credits block
-    /// with the author, the license and the source repository.
+    /// The same About mini page as NeverSleep's and dotbar's — see
+    /// AboutWindowController.swift. Replaces the standard macOS About panel,
+    /// which could not carry the donation QR.
     @objc private func showAbout() {
-        NSApp.orderFrontStandardAboutPanel(options: [
-            .applicationName: "DiskLED-plus",
-            .credits: Self.aboutCredits(),
-        ])
-        NSApp.activate(ignoringOtherApps: true)
-    }
-
-    private static func aboutCredits() -> NSAttributedString {
-        let text = NSMutableAttributedString()
-        let body = NSFont.systemFont(ofSize: 11)
-        let paragraph = NSMutableParagraphStyle()
-        paragraph.lineSpacing = 2
-        paragraph.paragraphSpacing = 6
-
-        func append(_ string: String, font: NSFont = body, color: NSColor = .labelColor,
-                    link: URL? = nil) {
-            let attributed = NSMutableAttributedString(string: string)
-            var attributes: [NSAttributedString.Key: Any] = [
-                .font: font, .foregroundColor: color, .paragraphStyle: paragraph,
-            ]
-            if let link {
-                attributes[.link] = link
-                attributes[.underlineStyle] = NSUnderlineStyle.single.rawValue
-            }
-            attributed.setAttributes(attributes, range: NSRange(location: 0, length: attributed.length))
-            text.append(attributed)
-        }
-
-        append("By Marcus1571\n", font: NSFont.boldSystemFont(ofSize: 11))
-        append("Disk activity, shown the way hardware used to do it: one LED per channel, "
-             + "blinking for every single tick of I/O — 33 times per second, nothing "
-             + "averaged, nothing rounded up, nothing smoothed away.\n\n")
-        append("Inspired by Helge Klein's DiskLED for Windows — no code or assets "
-             + "were copied, just the point.\n\n")
-        append("License: MIT — full text in the repository.\n")
-        append("github.com/Marcus1571/diskled-plus", color: .linkColor,
-               link: URL(string: "https://github.com/Marcus1571/diskled-plus")!)
-        append("\n")
-        return text
+        AboutWindowController.shared.show()
     }
 }
