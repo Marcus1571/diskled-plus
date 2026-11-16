@@ -81,6 +81,40 @@ final class AboutWindowController: NSObject {
             return box
         }
 
+        /// The three donation tiers (0.11.0): coffee (€1), burger (€5), sushi
+        /// night (€10) — each opens PayPal.me with the amount prefilled
+        /// (paypal.me/<user>/<amount><currency>). Same design as NeverSleep
+        /// 0.11 (approved via light/dark mockup).
+        func tierRow() -> NSView {
+            let row = NSStackView(views: [tierButton("☕️", "€1", "1eur"),
+                                          tierButton("🍔", "€5", "5eur"),
+                                          tierButton("🍣", "€10", "10eur")])
+            row.orientation = .horizontal
+            row.spacing = 8
+            row.distribution = .fillEqually
+            row.widthAnchor.constraint(equalToConstant: 252).isActive = true
+            return row
+        }
+
+        func tierButton(_ emoji: String, _ amount: String, _ path: String) -> NSView {
+            let b = TierButton(url: URL(string: "https://paypal.me/marcodalmoro/\(path)")!)
+            let para = NSMutableParagraphStyle()
+            para.alignment = .center
+            let text = NSMutableAttributedString()
+            text.append(NSAttributedString(string: emoji + "\n", attributes: [
+                .font: NSFont.systemFont(ofSize: 17),
+            ]))
+            text.append(NSAttributedString(string: amount, attributes: [
+                .font: NSFont.boldSystemFont(ofSize: 12),
+                .foregroundColor: NSColor.white,
+                .paragraphStyle: para,
+            ]))
+            b.attributedTitle = text
+            b.setAccessibilityLabel("Donate \(amount) via PayPal")
+            b.heightAnchor.constraint(equalToConstant: 46).isActive = true
+            return b
+        }
+
         // App icon (96 pt) — the icns from Resources; the bare binary gets
         // macOS's generic icon instead, same as before the bundled app.
         let icon = NSImageView(image: NSApp.applicationIconImage)
@@ -121,8 +155,9 @@ final class AboutWindowController: NSObject {
         views.append(contentsOf: [
             label("Support DiskLED-plus", 13, .semibold),
             link("paypal.me/marcodalmoro", URL(string: "https://paypal.me/marcodalmoro")!, 11),
-            label("Point your phone's camera at the code — or click the link.", 10,
-                  .regular, .secondaryLabelColor),
+            tierRow(),
+            label("Scan the code, tap the link, or pick a coffee — a coffee (€1), a burger (€5), "
+                + "a sushi night (€10). Thank you!", 10, .regular, .secondaryLabelColor),
             divider(),
             label("© 2026 Marcus1571", 13),
             label("MIT", 11, .regular, .secondaryLabelColor),
@@ -170,5 +205,31 @@ final class AboutWindowController: NSObject {
         v.heightAnchor.constraint(equalToConstant: 15).isActive = true
         v.setAccessibilityLabel("Bug")
         return v
+    }
+}
+
+/// Blue pill button for a donation tier; opens its PayPal.me amount URL in
+/// the default browser. Tier design shared with NeverSleep 0.11 / usagebar
+/// 0.10 / dotbar (mac-menu-bar-apps About standard).
+final class TierButton: NSButton {
+    private let url: URL
+
+    init(url: URL) {
+        self.url = url
+        super.init(frame: .zero)
+        isBordered = false
+        wantsLayer = true
+        layer?.backgroundColor = NSColor(red: 0.0, green: 0.41, blue: 0.77, alpha: 1).cgColor
+        layer?.cornerRadius = 9
+        target = self
+        action = #selector(openURL(_:))
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) is not supported")
+    }
+
+    @objc private func openURL(_ sender: Any) {
+        NSWorkspace.shared.open(url)
     }
 }

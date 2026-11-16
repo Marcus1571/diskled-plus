@@ -1,5 +1,12 @@
 # CHANGELOG.md
 
+## [0.11.0] — 2026-11-16: tiered donation buttons on the About page (☕ €1 / 🍔 €5 / 🍣 €10)
+
+Version bump: minor (new feature). Bundle version (`Scripts/make-app.sh`) 0.10.3 → 0.11.0 (build 1003 → 1100).
+
+### Added
+- **Tiered donation buttons on the About page** — ☕ €1 (coffee) · 🍔 €5 (burger) · 🍣 €10 (sushi night), each opening PayPal.me **with the amount prefilled**: `https://paypal.me/marcodalmoro/1eur`, `/5eur`, `/10eur` (documented PayPal.Me format `paypal.me/<user>/<amount><currency>`; verified against PayPal's FAQ). Code: `AboutWindowController.swift` gains `tierRow()`/`tierButton()` (horizontal `NSStackView` of three `TierButton` blue pills — emoji + amount, layer-cornered 9pt, `NSWorkspace.open` on click) and the new `TierButton` class; the camera-hint label reworded to "Scan the code, tap the link, or pick a coffee…". QR and the generic link stay. Same design as NeverSleep 0.11 (mockup-approved) / usagebar 0.10 / dotbar — the mac-menu-bar-apps About standard.
+
 ## [0.10.3] — 2026-11-14
 
 ### Fixed
