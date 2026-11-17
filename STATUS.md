@@ -1,5 +1,7 @@
 # STATUS.md
 
+**0.12.0 released** (2026-11-17): About page redesigned to the heat-warning panel card style (operator request, same design language as NeverSleep 0.15.0): icon header (icon 52 pt, leading-aligned) + three cards (♥ Support with QR/tiers/link/caption, 🐞 Report a Bug, 📄 License & code) + tagline footer; window 316 pt wide. Full sequence, released, notarized. E2E: About opened and verified.
+
 ## Where the project stands right now
 
 **0.10.3:** appearance-flip re-render added — KVO on `effectiveAppearance` forces one
