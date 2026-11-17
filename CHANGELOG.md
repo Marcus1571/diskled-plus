@@ -1,5 +1,12 @@
 # CHANGELOG.md
 
+## [0.12.1] — 2026-11-17: TierButton refuses first responder (focus-ring "bleed" fix)
+
+Version bump: patch. Bundle version (`Scripts/make-app.sh`) 0.12.0 → 0.12.1 (build 1200 → 1201).
+
+**Fixed (operator report on dotbar 0.8.0, same shared TierButton design)**
+- `AboutWindowController.swift` — the €1 tier button showed a blue halo "bleeding" past its rounded layer: the About window handed initial keyboard focus to the first TierButton, and macOS 27 paints the focus ring as a blue glow extending beyond the control. `TierButton` now sets `refusesFirstResponder = true` (click-only control, no keyboard interaction needed). NeverSleep's SwiftUI tier `Link`s don't auto-focus on window open and are unaffected.
+
 ## [0.12.0] — 2026-11-17: About page redesigned to the card style (heat-warning design language)
 
 Version bump: minor (UI redesign). Bundle version (`Scripts/make-app.sh`) 0.11.0 → 0.12.0 (build 1100 → 1200).
