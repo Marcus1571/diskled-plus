@@ -115,11 +115,58 @@ final class AboutWindowController: NSObject {
             return b
         }
 
-        // App icon (96 pt) — the icns from Resources; the bare binary gets
+        // Symbol badge helper: an SF Symbol image at a given size, tinted
+        // (contentTintColor — works in windows; the NSMenuItem.image quirk
+        // doesn't apply here).
+        func symbol(_ name: String, size: CGFloat, tint: NSColor) -> NSView {
+            let image = NSImage(systemSymbolName: name, accessibilityDescription: name)?
+                .withSymbolConfiguration(.init(pointSize: size, weight: .regular))
+            let v = NSImageView(image: image ?? NSImage())
+            v.contentTintColor = tint
+            v.widthAnchor.constraint(equalToConstant: size + 2).isActive = true
+            v.heightAnchor.constraint(equalToConstant: size).isActive = true
+            return v
+        }
+
+        /// Card container — the heat-warning panel's card pattern (NeverSleep
+        /// 0.14/0.15): badge + bold title on top, content below, soft rounded
+        /// background.
+        func card(badge: String, tint: NSColor, title: String, _ content: NSView) -> NSView {
+            let header = NSStackView(views: [symbol(badge, size: 13, tint: tint),
+                                             label(title, 13, .semibold)])
+            header.orientation = .horizontal
+            header.spacing = 8
+            header.alignment = .centerY
+            let stack = NSStackView(views: [header, content])
+            stack.orientation = .vertical
+            stack.spacing = 10
+            stack.alignment = .leading
+            stack.edgeInsets = NSEdgeInsets(top: 12, left: 12, bottom: 12, right: 12)
+            stack.wantsLayer = true
+            stack.layer?.backgroundColor = NSColor.labelColor.withAlphaComponent(0.03).cgColor
+            stack.layer?.cornerRadius = 10
+            stack.widthAnchor.constraint(equalToConstant: 276).isActive = true
+            return stack
+        }
+
+        // App icon (52 pt) — the icns from Resources; the bare binary gets
         // macOS's generic icon instead, same as before the bundled app.
         let icon = NSImageView(image: NSApp.applicationIconImage)
-        icon.widthAnchor.constraint(equalToConstant: 96).isActive = true
-        icon.heightAnchor.constraint(equalToConstant: 96).isActive = true
+        icon.widthAnchor.constraint(equalToConstant: 52).isActive = true
+        icon.heightAnchor.constraint(equalToConstant: 52).isActive = true
+
+        // Header: icon + name + version, leading-aligned (0.11.0 card style).
+        let nameColumn = NSStackView(views: [
+            label("DiskLED-plus", 22, .bold),
+            label("Version \(version) (build \(build))", 11, .regular, .secondaryLabelColor),
+        ])
+        nameColumn.orientation = .vertical
+        nameColumn.spacing = 3
+        nameColumn.alignment = .leading
+        let header = NSStackView(views: [icon, nameColumn])
+        header.orientation = .horizontal
+        header.spacing = 14
+        header.alignment = .centerY
 
         // Donation block: PayPal.me QR + tappable link (phones can't scan
         // their own screen, so the link matters). QR is bundled as
@@ -137,6 +184,37 @@ final class AboutWindowController: NSObject {
             qrView = v
         }
 
+        let supportContent = NSStackView(views: [])
+        supportContent.orientation = .vertical
+        supportContent.spacing = 10
+        supportContent.alignment = .centerX
+        var supportViews: [NSView] = []
+        if let qrView { supportViews.append(qrView) }
+        supportViews.append(contentsOf: [
+            tierRow(),
+            link("paypal.me/marcodalmoro", URL(string: "https://paypal.me/marcodalmoro")!, 11),
+        ])
+        let caption = label(
+            "Scan the code, tap the link, or pick a coffee — a coffee (€1), a burger (€5), a sushi night (€10). Thank you!",
+            10, .regular, .secondaryLabelColor)
+        caption.lineBreakMode = .byWordWrapping
+        caption.preferredMaxLayoutWidth = 228
+        supportViews.append(caption)
+        supportViews.forEach { supportContent.addArrangedSubview($0) }
+
+        let bugContent = link("github.com/Marcus1571/diskled-plus/issues",
+                              URL(string: "https://github.com/Marcus1571/diskled-plus/issues")!, 11)
+
+        let licenseContent = NSStackView(views: [
+            label("© 2026 Marcus1571", 11),
+            label("MIT", 11, .regular, .secondaryLabelColor),
+            link("github.com/Marcus1571/diskled-plus",
+                 URL(string: "https://github.com/Marcus1571/diskled-plus")!, 11),
+        ])
+        licenseContent.orientation = .vertical
+        licenseContent.spacing = 6
+        licenseContent.alignment = .leading
+
         let tagline = label(
             "Disk activity, shown the way hardware used to do it: one LED per channel, "
             + "blinking for every single tick of I/O — 33 times per second, nothing "
@@ -146,36 +224,21 @@ final class AboutWindowController: NSObject {
         tagline.preferredMaxLayoutWidth = 252
 
         var views: [NSView] = [
-            icon,
-            label("DiskLED-plus", 22, .bold),
-            label("Version \(version) (build \(build))", 11, .regular, .secondaryLabelColor),
+            header,
+            card(badge: "heart.fill", tint: .controlAccentColor, title: "Support DiskLED-plus", supportContent),
+            card(badge: "ladybug.fill", tint: .systemOrange, title: "Report a Bug", bugContent),
+            card(badge: "doc.text", tint: .secondaryLabelColor, title: "License & code", licenseContent),
             divider(),
-        ]
-        if let qrView { views.append(qrView) }
-        views.append(contentsOf: [
-            label("Support DiskLED-plus", 13, .semibold),
-            link("paypal.me/marcodalmoro", URL(string: "https://paypal.me/marcodalmoro")!, 11),
-            tierRow(),
-            label("Scan the code, tap the link, or pick a coffee — a coffee (€1), a burger (€5), "
-                + "a sushi night (€10). Thank you!", 10, .regular, .secondaryLabelColor),
-            divider(),
-            label("© 2026 Marcus1571", 13),
-            label("MIT", 11, .regular, .secondaryLabelColor),
-            link("github.com/Marcus1571/diskled-plus",
-                 URL(string: "https://github.com/Marcus1571/diskled-plus")!, 13),
-            bugRow(),
-            link("github.com/Marcus1571/diskled-plus/issues",
-                 URL(string: "https://github.com/Marcus1571/diskled-plus/issues")!, 11),
             tagline,
-        ])
+        ]
 
         let stack = NSStackView(views: views)
         stack.orientation = .vertical
-        stack.spacing = 10
-        stack.alignment = .centerX
-        stack.edgeInsets = NSEdgeInsets(top: 24, left: 24, bottom: 24, right: 24)
+        stack.spacing = 12
+        stack.alignment = .leading
+        stack.edgeInsets = NSEdgeInsets(top: 20, left: 20, bottom: 20, right: 20)
 
-        let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 300, height: stack.fittingSize.height),
+        let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 316, height: stack.fittingSize.height),
                          styleMask: [.titled, .closable], backing: .buffered, defer: false)
         w.title = "About DiskLED-plus"
         w.isReleasedWhenClosed = false
@@ -183,29 +246,8 @@ final class AboutWindowController: NSObject {
         return w
     }
 
-    /// The bug-report section: SF Symbol ladybug + "Report a Bug" as a compact
-    /// sibling of the support block (the tappable issues URL is a separate row
-    /// below, added by buildWindow).
-    private func bugRow() -> NSView {
-        let text = NSTextField(labelWithString: "Report a Bug")
-        text.font = .systemFont(ofSize: 13, weight: .semibold)
-        text.alignment = .center
-        let stack = NSStackView(views: [symbolLabel(), text])
-        stack.orientation = .horizontal
-        stack.spacing = 5
-        stack.alignment = .centerY
-        return stack
-    }
-
-    private func symbolLabel() -> NSView {
-        let image = NSImage(systemSymbolName: "ladybug.fill", accessibilityDescription: "Report a Bug")?
-            .withSymbolConfiguration(.init(pointSize: 12, weight: .regular))
-        let v = NSImageView(image: image ?? NSImage())
-        v.widthAnchor.constraint(equalToConstant: 16).isActive = true
-        v.heightAnchor.constraint(equalToConstant: 15).isActive = true
-        v.setAccessibilityLabel("Bug")
-        return v
-    }
+    /// The bug-report section: folded into the Report a Bug card (0.12.0) —
+    /// the standalone bugRow/symbolLabel helpers are gone.
 }
 
 /// Blue pill button for a donation tier; opens its PayPal.me amount URL in

@@ -1,5 +1,12 @@
 # CHANGELOG.md
 
+## [0.12.0] — 2026-11-17: About page redesigned to the card style (heat-warning design language)
+
+Version bump: minor (UI redesign). Bundle version (`Scripts/make-app.sh`) 0.11.0 → 0.12.0 (build 1100 → 1200).
+
+### Added / Changed
+- **About page redesigned to the card style** (the heat-warning panel design language, NeverSleep 0.15.0 pattern): **icon header** (icon 52 pt + name + version, leading-aligned) over three soft-background cards — ♥ **Support DiskLED-plus** (QR + tier row + link + caption), 🐞 **Report a Bug** (Issues link), 📄 **License & code** (©, MIT, repo link) — with the tagline as the footer. Code: `AboutWindowController.swift` gains the `card(badge:tint:title:)` container (NSStackView + layer background/cornerRadius) and a generalized `symbol(_:size:tint:)` helper; the old `bugRow()`/`symbolLabel()` helpers and the flat centered stack are gone. Window is now 316 pt wide with leading-aligned content. Content unchanged.
+
 ## [0.11.0] — 2026-11-16: tiered donation buttons on the About page (☕ €1 / 🍔 €5 / 🍣 €10)
 
 Version bump: minor (new feature). Bundle version (`Scripts/make-app.sh`) 0.10.3 → 0.11.0 (build 1003 → 1100).
